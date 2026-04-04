@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-04 (Phase 3 Frontend Core complete; Phases 1–3 shipped)  
+> **Last updated:** 2026-04-04 (Track B complete: comments, activity log, attribute fields)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -60,14 +60,14 @@
 | Status | Task | Notes |
 |--------|------|-------|
 | ✅ | Connect to MongoDB via Mongoose | `lib/db.ts` — `connectDb()` called on startup |
-| ✅ | Define Mongoose models | `Board`, `Column`, `Card`, `CardTypeSchema` — with `toJSON` transforms (snake_case → camelCase, `_id` → `id`) |
-| ⬜ | Define Mongoose models | `Comment`, `ActivityLog` — deferred to Phase 4 |
+| ✅ | Define Mongoose models | `Board`, `Column`, `Card`, `CardTypeSchema`, `Comment`, `ActivityLog` — all with `toJSON` transforms (`_id` → `id`) |
 | ✅ | Implement card type schema seeding | `lib/seed.ts` — reads `config/card-types.yaml`, upserts on every startup |
 | ✅ | Boards API (`/api/v1/boards`) | Full CRUD; cascade-delete columns + cards on board delete |
 | ✅ | Columns API (`/api/v1/boards/:boardId/columns`) | GET list + POST + PATCH + DELETE; cascade-delete cards on column delete |
 | ✅ | Cards API (`/api/v1/boards/:boardId/cards/:id`) | Full CRUD; move = PATCH with `columnId`/`position` |
-| ⬜ | Comments API | Deferred to Phase 4 |
-| ⬜ | Activity log | Deferred to Phase 4 |
+| ✅ | Comments API (`/api/v1/boards/:boardId/cards/:cardId/comments`) | Full CRUD; edit/delete restricted to comment author; writes `comment.added` activity entry |
+| ✅ | Activity log — write on card mutations | `card.created`, `card.updated` (with `fields` list), `card.moved` written in card route handlers |
+| ✅ | Activity log API (`/api/v1/boards/:boardId/cards/:cardId/activity`) | Read-only; last 100 entries newest-first |
 | ✅ | Card type schemas API (`/api/v1/card-types`) | Read-only, sorted by type |
 | ⬜ | Search endpoint (`/api/v1/search`) | Deferred to Phase 4 |
 | ⬜ | SSE broker + endpoint (`/api/v1/boards/:id/events`) | Deferred to Phase 4 |
@@ -94,10 +94,10 @@
 | ✅ | Dashboard page | `pages/Dashboard.tsx` — board grid; "New Board" modal; accent colours per board |
 | ✅ | Board page (Kanban view) | `pages/Board.tsx` — columns + cards; add-card inline form; add-column modal; delete card |
 | ✅ | Drag-and-drop (dnd-kit) | `@dnd-kit/core` + `@dnd-kit/sortable`; card reorder within column and move between columns; optimistic local state |
-| ✅ | Card detail view | `pages/CardDetail.tsx` — two-panel layout; Markdown rendering (`react-markdown`); inline edit (title + description); sidebar with type/column/dates; delete |
-| 🔄 | Card form (create / edit) | Inline create in Board (type + title only); full attribute-driven form deferred to Phase 4 |
+| ✅ | Card detail view | `pages/CardDetail.tsx` — two-panel layout; Markdown rendering; inline edit with dynamic attribute fields; comments; activity log in sidebar |
+| ✅ | Card form (create / edit) | Edit form includes all schema-driven attribute fields (`AttributeInput`); inline create in Board for quick add (type + title) |
 | ⬜ | Search page | Deferred to Phase 4 |
-| ⬜ | Comment input | Deferred to Phase 4 |
+| ✅ | Comment input | Comments section in card detail — post, edit own, delete own; Cmd+Enter to submit |
 | ✅ | User menu (nav bar) | `components/Nav.tsx` — logo, breadcrumb, avatar, sign-out dropdown |
 | ⬜ | Frontend unit tests (Vitest + React Testing Library) | Deferred to Phase 5 |
 

@@ -1,8 +1,8 @@
 # Flexboard – Architecture Document
 
-> **Version:** 0.2  
+> **Version:** 0.3  
 > **Date:** 2026-04-04  
-> **Status:** Updated — reflects Phase 1, 2, and 3 implementation; deviations from baseline recorded
+> **Status:** Updated — reflects Phase 1–3 + Track B (comments, activity log, attribute fields)
 
 ---
 
@@ -312,10 +312,12 @@ All endpoints except authentication-related routes require a valid `Authorizatio
 | `PATCH` | `/boards/:boardId/cards/:id` | ✅ | Update fields or move (pass `columnId` and/or `position`) |
 | `DELETE` | `/boards/:boardId/cards/:id` | ✅ | Delete a card |
 | **Comments** | | | |
-| `GET` | `/cards/:id/comments` | ⬜ | List comments — Phase 4 |
-| `POST` | `/cards/:id/comments` | ⬜ | Add a comment — Phase 4 |
-| `PATCH` | `/comments/:id` | ⬜ | Edit a comment — Phase 4 |
-| `DELETE` | `/comments/:id` | ⬜ | Delete a comment — Phase 4 |
+| `GET` | `/boards/:boardId/cards/:cardId/comments` | ✅ | List comments for a card, sorted oldest-first |
+| `POST` | `/boards/:boardId/cards/:cardId/comments` | ✅ | Add a comment; writes `comment.added` activity entry |
+| `PATCH` | `/boards/:boardId/cards/:cardId/comments/:id` | ✅ | Edit own comment (author-only) |
+| `DELETE` | `/boards/:boardId/cards/:cardId/comments/:id` | ✅ | Delete own comment (author-only) |
+| **Activity** | | | |
+| `GET` | `/boards/:boardId/cards/:cardId/activity` | ✅ | Last 100 activity entries for a card, newest-first |
 | **Search** | | | |
 | `GET` | `/search` | ⬜ | Full-text + attribute search — Phase 4 |
 | **Schemas** | | | |
@@ -608,18 +610,19 @@ The in-memory SSE broker works correctly for a single backend instance. If horiz
 ```
 src/
 ├── components/
-│   └── Nav.tsx              # Sticky nav — logo, breadcrumb, user avatar + sign-out dropdown
+│   ├── Nav.tsx              # Sticky nav — logo, breadcrumb, user avatar + sign-out dropdown
+│   └── AttributeField.tsx   # Three exports: AttributeValue (read), AttributeInput (edit), AttributeRow (sidebar)
 ├── pages/
 │   ├── AuthCallback.tsx     # OIDC redirect handler → completes code exchange
 │   ├── Dashboard.tsx        # Board grid + "New Board" modal
 │   ├── Board.tsx            # Kanban view — columns, cards, dnd-kit drag-and-drop
-│   └── CardDetail.tsx       # Two-panel card detail — inline edit, Markdown preview, sidebar
+│   └── CardDetail.tsx       # Two-panel detail — dynamic attribute fields, comments, activity log
 ├── store/
 │   └── uiStore.ts           # Zustand: breadcrumb board name (expandable)
 ├── lib/
-│   ├── api.ts               # Typed fetch wrapper; injects Bearer token on every request
+│   ├── api.ts               # Typed fetch wrapper; boards, columns, cards, card-types, comments, activity
 │   └── auth.ts              # oidc-client-ts UserManager; signIn / signOut / getAccessToken
-├── index.css                # Full design system — nav, kanban, cards, modals, forms
+├── index.css                # Full design system — nav, kanban, cards, modals, forms, comments, activity
 ├── App.tsx                  # BrowserRouter; AuthGate; route tree
 └── main.tsx                 # ReactDOM.render; QueryClientProvider; CSS import
 ```

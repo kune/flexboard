@@ -7,6 +7,8 @@ import { seedCardTypes } from '@/lib/seed.js'
 import { boardRoutes } from '@/routes/boards.js'
 import { cardRoutes } from '@/routes/cards.js'
 import { cardTypeRoutes } from '@/routes/cardtypes.js'
+import { commentRoutes } from '@/routes/comments.js'
+import { activityRoutes } from '@/routes/activity.js'
 
 const app = Fastify({
   logger: {
@@ -44,5 +46,7 @@ app.get(
 await boardRoutes(app)
 await cardRoutes(app)
 await cardTypeRoutes(app)
+await commentRoutes(app)
+await activityRoutes(app)
 
 export default app

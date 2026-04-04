@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 import { requireAuth, type AuthPayload } from '../lib/auth.js'
 import { Board } from '../models/board.js'
 import { Card } from '../models/card.js'
+import { ActivityLog } from '../models/activitylog.js'
 
 type AuthRequest = { user: AuthPayload }
 
@@ -50,6 +51,13 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
       createdBy: sub,
       attributes: attributes ?? {},
     })
+    await ActivityLog.create({
+      cardId: card._id,
+      boardId: new mongoose.Types.ObjectId(boardId),
+      actorId: sub,
+      event: 'card.created',
+      payload: { type, title: card.title },
+    })
     return reply.code(201).send(card)
   })
 
@@ -92,12 +100,31 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
         position?: number
         attributes?: Record<string, unknown>
       }
-      if (columnId !== undefined && mongoose.isValidObjectId(columnId)) card.columnId = new mongoose.Types.ObjectId(columnId)
-      if (title !== undefined) card.title = title.trim()
-      if (description !== undefined) card.description = description
-      if (position !== undefined) card.position = position
-      if (attributes !== undefined) card.attributes = attributes
+      const changedFields: string[] = []
+      const movedToColumn = columnId !== undefined && mongoose.isValidObjectId(columnId) && card.columnId.toString() !== columnId
+      if (columnId !== undefined && mongoose.isValidObjectId(columnId)) { card.columnId = new mongoose.Types.ObjectId(columnId); changedFields.push('columnId') }
+      if (title !== undefined) { card.title = title.trim(); changedFields.push('title') }
+      if (description !== undefined) { card.description = description; changedFields.push('description') }
+      if (position !== undefined) { card.position = position }
+      if (attributes !== undefined) { card.attributes = attributes; changedFields.push('attributes') }
       await card.save()
+      if (movedToColumn) {
+        await ActivityLog.create({
+          cardId: card._id,
+          boardId: new mongoose.Types.ObjectId(boardId),
+          actorId: sub,
+          event: 'card.moved',
+          payload: { toColumnId: columnId },
+        })
+      } else if (changedFields.some((f) => f !== 'columnId')) {
+        await ActivityLog.create({
+          cardId: card._id,
+          boardId: new mongoose.Types.ObjectId(boardId),
+          actorId: sub,
+          event: 'card.updated',
+          payload: { fields: changedFields.filter((f) => f !== 'columnId') },
+        })
+      }
       return card
     },
   )

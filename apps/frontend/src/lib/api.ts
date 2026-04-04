@@ -1,4 +1,4 @@
-import type { Board, Column, Card, CardTypeSchema } from '@flexboard/shared'
+import type { Board, Column, Card, CardTypeSchema, Comment, ActivityEntry } from '@flexboard/shared'
 import { getAccessToken } from './auth'
 
 const BASE = '/api/v1'
@@ -72,3 +72,28 @@ export const deleteCard = (boardId: string, id: string) =>
 // ── Card Types ────────────────────────────────────────────
 
 export const getCardTypes = () => request<CardTypeSchema[]>('/card-types')
+
+// ── Comments ──────────────────────────────────────────────
+
+export const getComments = (boardId: string, cardId: string) =>
+  request<Comment[]>(`/boards/${boardId}/cards/${cardId}/comments`)
+
+export const createComment = (boardId: string, cardId: string, body: string) =>
+  request<Comment>(`/boards/${boardId}/cards/${cardId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ body }),
+  })
+
+export const updateComment = (boardId: string, cardId: string, id: string, body: string) =>
+  request<Comment>(`/boards/${boardId}/cards/${cardId}/comments/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ body }),
+  })
+
+export const deleteComment = (boardId: string, cardId: string, id: string) =>
+  request<void>(`/boards/${boardId}/cards/${cardId}/comments/${id}`, { method: 'DELETE' })
+
+// ── Activity ──────────────────────────────────────────────
+
+export const getActivity = (boardId: string, cardId: string) =>
+  request<ActivityEntry[]>(`/boards/${boardId}/cards/${cardId}/activity`)
