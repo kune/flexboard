@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-04 (full stack running; Zitadel OIDC integration next)  
+> **Last updated:** 2026-04-04 (Phase 3 Frontend Core complete; Phases 1–3 shipped)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -46,10 +46,10 @@
 | ✅ | Write `frontend.Dockerfile` (multi-stage) | Build → Nginx serving SPA |
 | ✅ | Write `docker-compose.yml` | All 5 containers; internal network |
 | ✅ | Write `docker-compose.dev.yml` | Dev overrides: infrastructure only, apps run locally |
-| ⬜ | Configure Zitadel (initial setup) | OIDC application, client ID, redirect URIs |
-| ⬜ | Integrate Zitadel into frontend (OIDC client, login redirect) | `lib/auth.ts` |
-| ⬜ | Validate JWT in backend (`jose` + Zitadel JWKS) | Auth middleware on all protected routes |
-| ⬜ | Verify full auth round-trip via `docker compose up` | Login → token → protected API call |
+| ✅ | Configure Zitadel (initial setup) | `scripts/setup-zitadel.sh` — idempotent; creates OIDC app, grants IAM_OWNER; outputs IDs |
+| ✅ | Integrate Zitadel into frontend (OIDC client, login redirect) | `lib/auth.ts` — `oidc-client-ts`, PKCE, Login V1 |
+| ✅ | Validate JWT in backend (`jose` + Zitadel JWKS) | `lib/auth.ts` — `createRemoteJWKSet`; `requireAuth` preHandler on all routes |
+| ✅ | Verify full auth round-trip via `docker compose up` | Login → Zitadel Login V1 → `/auth/callback` → token → `/api/v1/me` ✓ |
 
 ---
 
@@ -59,23 +59,23 @@
 
 | Status | Task | Notes |
 |--------|------|-------|
-| ⬜ | Connect to MongoDB via Mongoose | Connection pooling, error handling on startup |
-| ⬜ | Define Mongoose models | `Board`, `Column`, `Card`, `Comment`, `ActivityLog`, `CardTypeSchema` |
-| ⬜ | Implement card type schema seeding | Read `config/card-types.yaml` → upsert into MongoDB on startup |
-| ⬜ | Boards API (`/api/v1/boards`) | Full CRUD |
-| ⬜ | Columns API (`/api/v1/boards/:id/columns`) | CRUD + reorder |
-| ⬜ | Cards API (`/api/v1/boards/:id/cards`, `/api/v1/cards/:id`) | CRUD + move |
-| ⬜ | Comments API (`/api/v1/cards/:id/comments`) | CRUD |
-| ⬜ | Activity log — write on card mutations | Middleware or service layer hook |
-| ⬜ | Card type schemas API (`/api/v1/card-types`) | Read-only |
-| ⬜ | Search endpoint (`/api/v1/search`) | Full-text + attribute filters |
-| ⬜ | SSE broker implementation | In-memory per-board subscriber registry |
-| ⬜ | SSE endpoint (`/api/v1/boards/:id/events`) | Auth-guarded; emit on all card/column mutations |
-| ⬜ | Input validation via Zod on all endpoints | Use schemas from `packages/shared` |
-| ⬜ | Board-level permission checks | Owner / editor / viewer enforced per route |
-| ⬜ | OpenAPI spec generation | Auto-generated from Fastify route schemas |
-| ⬜ | Backend unit tests (Vitest) | Services and validation logic |
-| ⬜ | Backend integration tests | Against real MongoDB (Testcontainers) |
+| ✅ | Connect to MongoDB via Mongoose | `lib/db.ts` — `connectDb()` called on startup |
+| ✅ | Define Mongoose models | `Board`, `Column`, `Card`, `CardTypeSchema` — with `toJSON` transforms (snake_case → camelCase, `_id` → `id`) |
+| ⬜ | Define Mongoose models | `Comment`, `ActivityLog` — deferred to Phase 4 |
+| ✅ | Implement card type schema seeding | `lib/seed.ts` — reads `config/card-types.yaml`, upserts on every startup |
+| ✅ | Boards API (`/api/v1/boards`) | Full CRUD; cascade-delete columns + cards on board delete |
+| ✅ | Columns API (`/api/v1/boards/:boardId/columns`) | GET list + POST + PATCH + DELETE; cascade-delete cards on column delete |
+| ✅ | Cards API (`/api/v1/boards/:boardId/cards/:id`) | Full CRUD; move = PATCH with `columnId`/`position` |
+| ⬜ | Comments API | Deferred to Phase 4 |
+| ⬜ | Activity log | Deferred to Phase 4 |
+| ✅ | Card type schemas API (`/api/v1/card-types`) | Read-only, sorted by type |
+| ⬜ | Search endpoint (`/api/v1/search`) | Deferred to Phase 4 |
+| ⬜ | SSE broker + endpoint (`/api/v1/boards/:id/events`) | Deferred to Phase 4 |
+| ⬜ | Input validation via Zod on all endpoints | Currently inline type checks; Zod integration from `packages/shared` deferred |
+| ✅ | Board-level permission checks | `ownerId`/`memberIds` enforced on every route handler |
+| ⬜ | OpenAPI spec generation | Deferred to Phase 5 |
+| ⬜ | Backend unit tests (Vitest) | Deferred to Phase 5 |
+| ⬜ | Backend integration tests | Deferred to Phase 5 |
 
 ---
 
@@ -85,21 +85,21 @@
 
 | Status | Task | Notes |
 |--------|------|-------|
-| ⬜ | Set up TanStack Query | Global `QueryClient`, devtools in dev |
-| ⬜ | Set up Zustand store (`uiStore`) | Theme, active filters, sidebar state |
-| ⬜ | Set up react-i18next | `lib/i18n.ts`; load `locales/en.json` |
-| ⬜ | Implement theming (light/dark) | CSS custom properties; FOUC prevention; `localStorage` persistence |
-| ⬜ | Implement typed API client | `lib/api.ts` — fetch wrapper with auth header injection |
-| ⬜ | Implement SSE hook (`useBoardSSE`) | `EventSource` wrapper → `queryClient.invalidateQueries` |
-| ⬜ | Dashboard page | List boards; create board button |
-| ⬜ | Board page (Kanban view) | Columns + cards; filter toolbar |
-| ⬜ | Drag-and-drop (dnd-kit) | Card reorder within column; card move between columns |
-| ⬜ | Card detail view | Two-panel layout; Markdown rendering; activity log |
-| ⬜ | Card form (create / edit) | Type selector; dynamic attribute fields from schema; Markdown editor |
-| ⬜ | Search page | Filter chips; live results with highlighted matches |
-| ⬜ | Comment input | Markdown editor; submit; edit/delete own comments |
-| ⬜ | User menu (nav bar) | Theme switcher; logout |
-| ⬜ | Frontend unit tests (Vitest + React Testing Library) | Key components and hooks |
+| ✅ | Set up TanStack Query | Global `QueryClient` in `main.tsx`; devtools mounted in dev |
+| ✅ | Set up Zustand store (`uiStore`) | `store/uiStore.ts` — breadcrumb board name; expandable for future state |
+| ⬜ | Set up react-i18next | Deferred — dependency present, initialisation not yet wired |
+| ⬜ | Implement theming (light/dark) | Deferred to Phase 4; single light theme shipped |
+| ✅ | Implement typed API client | `lib/api.ts` — typed fetch wrapper; Bearer token injected from `getAccessToken()` |
+| ⬜ | Implement SSE hook (`useBoardSSE`) | Deferred to Phase 4 |
+| ✅ | Dashboard page | `pages/Dashboard.tsx` — board grid; "New Board" modal; accent colours per board |
+| ✅ | Board page (Kanban view) | `pages/Board.tsx` — columns + cards; add-card inline form; add-column modal; delete card |
+| ✅ | Drag-and-drop (dnd-kit) | `@dnd-kit/core` + `@dnd-kit/sortable`; card reorder within column and move between columns; optimistic local state |
+| ✅ | Card detail view | `pages/CardDetail.tsx` — two-panel layout; Markdown rendering (`react-markdown`); inline edit (title + description); sidebar with type/column/dates; delete |
+| 🔄 | Card form (create / edit) | Inline create in Board (type + title only); full attribute-driven form deferred to Phase 4 |
+| ⬜ | Search page | Deferred to Phase 4 |
+| ⬜ | Comment input | Deferred to Phase 4 |
+| ✅ | User menu (nav bar) | `components/Nav.tsx` — logo, breadcrumb, avatar, sign-out dropdown |
+| ⬜ | Frontend unit tests (Vitest + React Testing Library) | Deferred to Phase 5 |
 
 ---
 

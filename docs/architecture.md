@@ -1,8 +1,8 @@
 # Flexboard – Architecture Document
 
-> **Version:** 0.1  
+> **Version:** 0.2  
 > **Date:** 2026-04-04  
-> **Status:** Baseline — aligned with all architectural decisions
+> **Status:** Updated — reflects Phase 1, 2, and 3 implementation; deviations from baseline recorded
 
 ---
 
@@ -151,14 +151,14 @@ flexboard/
 |-------|-----------|-----------|
 | Frontend framework | React 19 + TypeScript | Large ecosystem, strong typing |
 | Frontend build | Vite | Fast HMR, optimal production bundles |
-| UI components | shadcn/ui (Radix UI) | Accessible, unstyled primitives; CSS-variable theming |
-| Styling | Tailwind CSS + CSS custom properties | Utility-first; design tokens for themes |
+| UI components | Plain CSS (`src/index.css`) | No component library; hand-crafted stylesheet derived from HTML mockups (see ADR-10) |
+| Styling | Plain CSS custom stylesheet | Design tokens expressed as CSS classes matching the mockup; dark theme deferred |
 | State – UI | Zustand | Minimal, unopinionated |
 | State – server | TanStack Query | Caching, refetching, SSE integration |
 | Drag and drop | dnd-kit | Modern, accessible |
-| Markdown rendering | react-markdown + rehype-highlight | Safe renderer, no raw HTML |
-| Markdown editing | @uiw/react-md-editor or tiptap | Write/Preview toggle |
-| i18n | react-i18next | Industry standard; JSON locale files |
+| Markdown rendering | react-markdown | Safe renderer, no raw HTML |
+| Markdown editing | Plain `<textarea>` (Phase 3) | Full Markdown editor (tiptap or @uiw/react-md-editor) deferred to Phase 4 |
+| i18n | react-i18next | Dependency installed; initialisation deferred — English strings are inline for now |
 | Backend runtime | Node.js 22 + TypeScript | Shared language with frontend; enables shared types and Zod schemas via `packages/shared` |
 | Backend framework | Fastify | Fast, schema-first, native SSE support; lower memory footprint than alternatives |
 | Validation | Zod | TypeScript-native; schemas shared via `packages/shared` |
@@ -292,37 +292,37 @@ All endpoints except authentication-related routes require a valid `Authorizatio
 
 ### 6.1 Endpoint Overview
 
-| Method | Path | Description |
-|--------|------|-------------|
-| **Boards** | | |
-| `GET` | `/boards` | List boards accessible to the authenticated user |
-| `POST` | `/boards` | Create a new board |
-| `GET` | `/boards/:id` | Get a single board with its columns |
-| `PATCH` | `/boards/:id` | Update board name/description/members |
-| `DELETE` | `/boards/:id` | Delete a board (and all its columns and cards) |
-| **Columns** | | |
-| `POST` | `/boards/:id/columns` | Add a column to a board |
-| `PATCH` | `/boards/:id/columns/:colId` | Rename or reorder a column |
-| `DELETE` | `/boards/:id/columns/:colId` | Delete a column |
-| **Cards** | | |
-| `GET` | `/boards/:id/cards` | List all cards in a board (supports filter params) |
-| `POST` | `/boards/:id/cards` | Create a card |
-| `GET` | `/cards/:id` | Get a single card with comments and activity |
-| `PATCH` | `/cards/:id` | Update card fields or attributes |
-| `DELETE` | `/cards/:id` | Delete a card |
-| `PATCH` | `/cards/:id/move` | Move card to a different column / position |
-| **Comments** | | |
-| `GET` | `/cards/:id/comments` | List comments for a card |
-| `POST` | `/cards/:id/comments` | Add a comment |
-| `PATCH` | `/comments/:id` | Edit a comment |
-| `DELETE` | `/comments/:id` | Delete a comment |
-| **Search** | | |
-| `GET` | `/search` | Full-text + attribute search across boards |
-| **Schemas** | | |
-| `GET` | `/card-types` | List all card type schemas |
-| `GET` | `/card-types/:type` | Get schema for a specific card type |
-| **Real-time** | | |
-| `GET` | `/boards/:id/events` | SSE stream for board-scoped real-time events |
+| Method | Path | Status | Description |
+|--------|------|--------|-------------|
+| **Boards** | | | |
+| `GET` | `/boards` | ✅ | List boards accessible to the authenticated user |
+| `POST` | `/boards` | ✅ | Create a new board |
+| `GET` | `/boards/:id` | ✅ | Get a single board |
+| `PATCH` | `/boards/:id` | ✅ | Update board name / description |
+| `DELETE` | `/boards/:id` | ✅ | Delete a board (cascades to columns and cards) |
+| **Columns** | | | |
+| `GET` | `/boards/:boardId/columns` | ✅ | List columns for a board, sorted by position |
+| `POST` | `/boards/:boardId/columns` | ✅ | Add a column; auto-assigns next position |
+| `PATCH` | `/boards/:boardId/columns/:id` | ✅ | Rename or reorder a column |
+| `DELETE` | `/boards/:boardId/columns/:id` | ✅ | Delete a column (cascades to cards in that column) |
+| **Cards** | | | |
+| `GET` | `/boards/:boardId/cards` | ✅ | List all cards in a board, sorted by position |
+| `POST` | `/boards/:boardId/cards` | ✅ | Create a card; auto-assigns next position in column |
+| `GET` | `/boards/:boardId/cards/:id` | ✅ | Get a single card |
+| `PATCH` | `/boards/:boardId/cards/:id` | ✅ | Update fields or move (pass `columnId` and/or `position`) |
+| `DELETE` | `/boards/:boardId/cards/:id` | ✅ | Delete a card |
+| **Comments** | | | |
+| `GET` | `/cards/:id/comments` | ⬜ | List comments — Phase 4 |
+| `POST` | `/cards/:id/comments` | ⬜ | Add a comment — Phase 4 |
+| `PATCH` | `/comments/:id` | ⬜ | Edit a comment — Phase 4 |
+| `DELETE` | `/comments/:id` | ⬜ | Delete a comment — Phase 4 |
+| **Search** | | | |
+| `GET` | `/search` | ⬜ | Full-text + attribute search — Phase 4 |
+| **Schemas** | | | |
+| `GET` | `/card-types` | ✅ | List all card type schemas, sorted by type |
+| `GET` | `/card-types/:type` | ⬜ | Get schema for a specific type — Phase 4 |
+| **Real-time** | | | |
+| `GET` | `/boards/:id/events` | ⬜ | SSE stream for board-scoped events — Phase 4 |
 
 ### 6.2 Filtering
 
@@ -396,7 +396,11 @@ Browser                   Frontend (SPA)            Zitadel               Backen
    │                           │◀──────────────────────────────────────────- │
 ```
 
-**Token storage:** Access Tokens are kept in memory only (never in `localStorage` to avoid XSS exposure). The Refresh Token is stored in an `httpOnly` cookie managed by the frontend server or the SPA's token renewal logic.
+**Token storage:** `oidc-client-ts` is configured with `WebStorageStateStore` backed by `localStorage`. This was chosen for simplicity in Phase 1; migration to memory-only storage (with refresh token in an `httpOnly` cookie) is tracked as a Phase 5 security hardening item.
+
+**Zitadel Login V1:** The self-hosted Zitadel instance is configured to use Login V1 (bundled) rather than the separate Login V2 service. This is forced via `ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"` in `docker-compose.yml` (must be set before the first DB initialization). See ADR-11.
+
+**Nginx host routing:** All browser and internal Docker traffic destined for Zitadel is routed through the `frontend` nginx container, which rewrites `Host: localhost` on the proxy request. This is required because Zitadel routes requests by the `Host` header matching its configured `ExternalDomain` (`localhost`). Direct calls to `http://zitadel:8080` would produce 404 errors on all paths.
 
 ### 7.2 Authorization Model
 
@@ -604,31 +608,23 @@ The in-memory SSE broker works correctly for a single backend instance. If horiz
 ```
 src/
 ├── components/
-│   ├── ui/                  # shadcn/ui primitives (auto-generated)
-│   ├── board/               # BoardView, KanbanColumn, KanbanCard
-│   ├── card/                # CardDetail, CardForm, AttributeField
-│   ├── layout/              # NavBar, Sidebar
-│   └── common/              # MarkdownRenderer, MarkdownEditor, Avatar, …
+│   └── Nav.tsx              # Sticky nav — logo, breadcrumb, user avatar + sign-out dropdown
 ├── pages/
-│   ├── DashboardPage.tsx
-│   ├── BoardPage.tsx
-│   ├── CardDetailPage.tsx   # or rendered as modal inside BoardPage
-│   └── SearchPage.tsx
-├── hooks/
-│   ├── useBoard.ts          # TanStack Query wrapper
-│   ├── useCards.ts
-│   ├── useBoardSSE.ts       # SSE subscription + cache invalidation
-│   └── useCardTypeSchema.ts
-├── stores/
-│   └── uiStore.ts           # Zustand: theme, sidebar state, active filters
+│   ├── AuthCallback.tsx     # OIDC redirect handler → completes code exchange
+│   ├── Dashboard.tsx        # Board grid + "New Board" modal
+│   ├── Board.tsx            # Kanban view — columns, cards, dnd-kit drag-and-drop
+│   └── CardDetail.tsx       # Two-panel card detail — inline edit, Markdown preview, sidebar
+├── store/
+│   └── uiStore.ts           # Zustand: breadcrumb board name (expandable)
 ├── lib/
-│   ├── api.ts               # Typed fetch wrapper
-│   ├── auth.ts              # Zitadel OIDC client (zitadel-oidc-client)
-│   ├── sse.ts               # EventSource wrapper with reconnect logic
-│   └── i18n.ts              # react-i18next initialisation
-└── locales/
-    └── en.json              # All UI strings
+│   ├── api.ts               # Typed fetch wrapper; injects Bearer token on every request
+│   └── auth.ts              # oidc-client-ts UserManager; signIn / signOut / getAccessToken
+├── index.css                # Full design system — nav, kanban, cards, modals, forms
+├── App.tsx                  # BrowserRouter; AuthGate; route tree
+└── main.tsx                 # ReactDOM.render; QueryClientProvider; CSS import
 ```
+
+> **Planned directories not yet created:** `hooks/` (TanStack Query wrappers), `locales/` (i18n strings). These will be added in Phase 4.
 
 ### 10.2 Data Flow
 
@@ -690,15 +686,21 @@ Minimum themes shipped: `light` (default), `dark`.
 services:
 
   frontend:
-    build: ./apps/frontend
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:                              # Vite build-time env vars baked into the SPA bundle
+        VITE_ZITADEL_CLIENT_ID: ${VITE_ZITADEL_CLIENT_ID}
+        VITE_ZITADEL_DOMAIN: ${VITE_ZITADEL_DOMAIN}
     ports: ["80:80"]
-    depends_on: [backend]
+    depends_on: [backend, zitadel]
 
   backend:
     build: ./apps/backend
     environment:
       MONGO_URI: mongodb://mongodb:27017/flexboard
-      ZITADEL_DOMAIN: http://zitadel:8080
+      ZITADEL_DOMAIN: http://frontend   # ← routed through nginx, which rewrites Host: localhost
+      CORS_ORIGIN: http://localhost
     depends_on: [mongodb, zitadel]
 
   mongodb:
@@ -706,10 +708,11 @@ services:
     volumes: [mongo-data:/data/db]
 
   zitadel:
-    image: ghcr.io/zitadel/zitadel:latest
-    command: start-from-init --masterkey ${ZITADEL_MASTERKEY}
+    image: ghcr.io/zitadel/zitadel:v4.13.1
+    command: start-from-init --masterkey ${ZITADEL_MASTERKEY} --tlsMode disabled
     environment:
       ZITADEL_DATABASE_POSTGRES_HOST: zitadel-db
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"  # ← forces Login V1
     depends_on: [zitadel-db]
 
   zitadel-db:
@@ -747,12 +750,16 @@ All runtime configuration is provided via environment variables. Secrets are nev
 
 | Variable | Service | Description |
 |----------|---------|-------------|
-| `MONGO_URI` | backend | MongoDB connection string |
-| `ZITADEL_DOMAIN` | backend | Base URL of the Zitadel instance |
-| `ZITADEL_CLIENT_ID` | frontend | OIDC client ID for the SPA |
+| `MONGO_URI` | backend | MongoDB connection string (default: `mongodb://mongodb:27017/flexboard`) |
+| `ZITADEL_DOMAIN` | backend | Base URL used to fetch JWKS — must be `http://frontend` so nginx rewrites `Host: localhost` |
+| `CORS_ORIGIN` | backend | Allowed CORS origin (default: `http://localhost:5173`) |
+| `VITE_ZITADEL_CLIENT_ID` | frontend build | OIDC client ID baked into the SPA at build time |
+| `VITE_ZITADEL_DOMAIN` | frontend build | Zitadel authority URL baked into the SPA (e.g. `http://localhost`) |
 | `ZITADEL_MASTERKEY` | zitadel | 32-byte master encryption key |
 | `ZITADEL_DB_PASSWORD` | zitadel-db | PostgreSQL password for Zitadel |
-| `CORS_ORIGIN` | backend | Allowed origin for CORS |
+| `ZITADEL_ADMIN_PASSWORD` | zitadel | Initial admin console password |
+
+> **Important:** `VITE_*` variables must be passed as Docker `build.args` in `docker-compose.yml` — they are not available at runtime and `.env` is not copied into the image. The frontend Dockerfile declares matching `ARG` and `ENV` directives for each.
 
 ---
 
@@ -769,3 +776,5 @@ All runtime configuration is provided via environment variables. Secrets are nev
 | ADR-07 | Real-time updates | **Server-Sent Events (SSE)** | Sufficient for unidirectional board updates; simpler than WebSockets; no additional infrastructure |
 | ADR-08 | Theming | **CSS custom properties** via `shadcn/ui` | Zero-JS theme switching; extensible without code changes; FOUC-safe |
 | ADR-09 | Backend technology | **Node.js 22 + Fastify + TypeScript** | Same language as frontend enables shared Zod schemas and types via `packages/shared`; Fastify has lower memory footprint (~60–150 MB) and better performance than Spring Boot; preferred over Go to preserve monorepo code sharing |
+| ADR-10 | Frontend styling | **Plain CSS (`src/index.css`)** | shadcn/ui + Tailwind were the original plan, but the HTML mockups already defined a complete, consistent design system. Transcribing that directly to a single CSS file was faster, removed a large dependency chain, and produced pixel-faithful results. May revisit if component reuse demands grow. |
+| ADR-11 | Zitadel login UI | **Login V1 (bundled)** | Zitadel v4.13.1's Login V2 requires the `session.link` permission for `OIDCService/CreateCallback`, which is not mapped to any standard role in this version. All attempts to grant it failed with `AUTH-AWfge: No matching permissions found`. Login V1 is bundled directly in the Zitadel binary and works without additional permissions. Forced via `ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"` (must be set before first DB init). |

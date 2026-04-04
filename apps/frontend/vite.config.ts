@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
 export default defineConfig({
+  // Load .env from the monorepo root so VITE_* vars are shared
+  envDir: resolve(__dirname, '../../'),
   plugins: [react()],
   resolve: {
     alias: {

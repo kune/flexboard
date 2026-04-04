@@ -1,6 +1,12 @@
 # ── Stage 1: Build ───────────────────────────────────────
 FROM node:22-alpine AS builder
 
+# Vite reads VITE_* vars from the environment at build time
+ARG VITE_ZITADEL_CLIENT_ID
+ARG VITE_ZITADEL_DOMAIN
+ENV VITE_ZITADEL_CLIENT_ID=$VITE_ZITADEL_CLIENT_ID
+ENV VITE_ZITADEL_DOMAIN=$VITE_ZITADEL_DOMAIN
+
 RUN npm install -g pnpm
 
 WORKDIR /app

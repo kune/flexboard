@@ -6,6 +6,9 @@ services:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
+      args:
+        VITE_ZITADEL_CLIENT_ID: ${VITE_ZITADEL_CLIENT_ID}
+        VITE_ZITADEL_DOMAIN: ${VITE_ZITADEL_DOMAIN}
     ports:
       - "80:80"
     depends_on:
@@ -23,7 +26,8 @@ services:
       HOST: 0.0.0.0
       MONGO_URI: mongodb://mongodb:27017/flexboard
       CORS_ORIGIN: http://localhost
-      ZITADEL_DOMAIN: http://zitadel:8080
+      ZITADEL_DOMAIN: http://frontend
+      ZITADEL_ISSUER: http://localhost
       ZITADEL_PROJECT_ID: ${ZITADEL_PROJECT_ID}
     depends_on:
       mongodb:
@@ -53,6 +57,7 @@ services:
     command: start-from-init --masterkey ${ZITADEL_MASTERKEY} --tlsMode disabled --config /etc/zitadel/config.yaml
     volumes:
       - ./config/zitadel.yaml:/etc/zitadel/config.yaml:ro
+      - ./machinekey:/machinekey
     environment:
       ZITADEL_DATABASE_POSTGRES_HOST: zitadel-db
       ZITADEL_DATABASE_POSTGRES_PORT: 5432
@@ -64,12 +69,20 @@ services:
       ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD: ${ZITADEL_DB_PASSWORD}
       ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE: disable
       ZITADEL_EXTERNALSECURE: "false"
-      ZITADEL_EXTERNALPORT: 8080
+      ZITADEL_EXTERNALPORT: 80
       ZITADEL_EXTERNALDOMAIN: localhost
       ZITADEL_TLSMODE: disabled
       ZITADEL_TLS_ENABLED: "false"
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: ${ZITADEL_ADMIN_USERNAME:-admin@flexboard.localhost}
       ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ZITADEL_ADMIN_PASSWORD}
+      # Service account for API automation — PAT written to /machinekey/sa.pat on first init
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME: flexboard-sa
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME: Flexboard Service Account
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_PAT_EXPIRATIONDATE: "2030-01-01T00:00:00Z"
+      ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH: /machinekey/sa.pat
+      # Force Login V1 (bundled) — Login V2 requires a separate service with broken
+      # CreateCallback permissions in v4.13.1 (session.link not mapped to IAM_OWNER)
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"
     depends_on:
       zitadel-db:
         condition: service_healthy

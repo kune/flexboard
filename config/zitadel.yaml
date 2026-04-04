@@ -1,4 +1,4 @@
-ExternalPort: 8080
+ExternalPort: 80
 ExternalDomain: localhost
 ExternalSecure: false
 TLSMode: disabled

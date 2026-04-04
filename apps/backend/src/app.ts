@@ -1,6 +1,12 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
+import { requireAuth, type AuthPayload } from '@/lib/auth.js'
+import { connectDb } from '@/lib/db.js'
+import { seedCardTypes } from '@/lib/seed.js'
+import { boardRoutes } from '@/routes/boards.js'
+import { cardRoutes } from '@/routes/cards.js'
+import { cardTypeRoutes } from '@/routes/cardtypes.js'
 
 const app = Fastify({
   logger: {
@@ -18,7 +24,25 @@ await app.register(cors, {
 
 await app.register(helmet)
 
-// Health check — used by Docker Compose and load balancers
+// Connect to MongoDB and seed reference data
+await connectDb()
+await seedCardTypes()
+
+// Health check — unauthenticated, used by Docker Compose
 app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
+
+// Auth smoke-test
+app.get(
+  '/api/v1/me',
+  { preHandler: requireAuth },
+  async (request) => {
+    const user = (request as typeof request & { user: AuthPayload }).user
+    return { sub: user.sub, email: user.email, name: user.name }
+  },
+)
+
+await boardRoutes(app)
+await cardRoutes(app)
+await cardTypeRoutes(app)
 
 export default app

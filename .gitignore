@@ -30,3 +30,6 @@ pnpm-debug.log*
 
 # Docker
 docker-compose.override.yml
+
+# Zitadel machine key (contains secret PAT — never commit)
+machinekey/
