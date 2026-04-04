@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-04 (Track B complete: comments, activity log, attribute fields)  
+> **Last updated:** 2026-04-04 (Track A complete: SSE real-time updates)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -70,7 +70,7 @@
 | ✅ | Activity log API (`/api/v1/boards/:boardId/cards/:cardId/activity`) | Read-only; last 100 entries newest-first |
 | ✅ | Card type schemas API (`/api/v1/card-types`) | Read-only, sorted by type |
 | ⬜ | Search endpoint (`/api/v1/search`) | Deferred to Phase 4 |
-| ⬜ | SSE broker + endpoint (`/api/v1/boards/:id/events`) | Deferred to Phase 4 |
+| ✅ | SSE broker + endpoint (`/api/v1/boards/:id/events`) | `lib/sse.ts` — in-memory registry; `routes/sse.ts` — token via `?token=` (EventSource header limitation); keepalive every 25 s |
 | ⬜ | Input validation via Zod on all endpoints | Currently inline type checks; Zod integration from `packages/shared` deferred |
 | ✅ | Board-level permission checks | `ownerId`/`memberIds` enforced on every route handler |
 | ⬜ | OpenAPI spec generation | Deferred to Phase 5 |
@@ -90,7 +90,7 @@
 | ⬜ | Set up react-i18next | Deferred — dependency present, initialisation not yet wired |
 | ⬜ | Implement theming (light/dark) | Deferred to Phase 4; single light theme shipped |
 | ✅ | Implement typed API client | `lib/api.ts` — typed fetch wrapper; Bearer token injected from `getAccessToken()` |
-| ⬜ | Implement SSE hook (`useBoardSSE`) | Deferred to Phase 4 |
+| ✅ | Implement SSE hook (`useBoardSSE`) | `hooks/useBoardSSE.ts` — opens EventSource, invalidates queries on events, exponential-backoff reconnect (3 retries) |
 | ✅ | Dashboard page | `pages/Dashboard.tsx` — board grid; "New Board" modal; accent colours per board |
 | ✅ | Board page (Kanban view) | `pages/Board.tsx` — columns + cards; add-card inline form; add-column modal; delete card |
 | ✅ | Drag-and-drop (dnd-kit) | `@dnd-kit/core` + `@dnd-kit/sortable`; card reorder within column and move between columns; optimistic local state |
@@ -114,8 +114,8 @@
 | ⬜ | Acceptance criteria checklist rendering | Interactive checkboxes in card detail |
 | ⬜ | Full-text search with highlighted matches | `$text` index or Atlas Search |
 | ⬜ | Activity log display in card detail | Chronological event list |
-| ⬜ | Real-time: live card moves reflected without reload | Via SSE + TanStack Query invalidation |
-| ⬜ | Real-time: live comments | New comments appear without reload |
+| ✅ | Real-time: live card moves reflected without reload | Via SSE + TanStack Query invalidation |
+| ✅ | Real-time: live comments | New comments appear without reload |
 | ⬜ | Board description (Markdown) | Rendered in board header or info panel |
 | ⬜ | Additional themes | At least one additional theme beyond light/dark |
 | ⬜ | Error states & loading skeletons | All data-fetching surfaces |

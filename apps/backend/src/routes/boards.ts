@@ -4,6 +4,7 @@ import { requireAuth, type AuthPayload } from '../lib/auth.js'
 import { Board } from '../models/board.js'
 import { Column } from '../models/board.js'
 import { Card } from '../models/card.js'
+import { broadcast } from '../lib/sse.js'
 
 type AuthRequest = { user: AuthPayload }
 
@@ -90,6 +91,7 @@ export async function boardRoutes(app: FastifyInstance): Promise<void> {
     const lastCol = await Column.findOne({ boardId }).sort({ position: -1 })
     const pos = position ?? (lastCol ? lastCol.position + 1 : 0)
     const col = await Column.create({ boardId, name: name.trim(), position: pos })
+    broadcast(boardId, 'column.created', { boardId, columnId: col.id })
     return reply.code(201).send(col)
   })
 
@@ -111,6 +113,7 @@ export async function boardRoutes(app: FastifyInstance): Promise<void> {
       if (name !== undefined) col.name = name.trim()
       if (position !== undefined) col.position = position
       await col.save()
+      broadcast(boardId, 'column.updated', { boardId, columnId: id })
       return col
     },
   )
@@ -129,6 +132,7 @@ export async function boardRoutes(app: FastifyInstance): Promise<void> {
       const col = await Column.findOne({ _id: id, boardId })
       if (!col) return reply.code(404).send({ error: 'Not found' })
       await Promise.all([col.deleteOne(), Card.deleteMany({ columnId: id })])
+      broadcast(boardId, 'column.deleted', { boardId, columnId: id })
       return reply.code(204).send()
     },
   )

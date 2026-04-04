@@ -16,6 +16,18 @@ export interface AuthPayload extends JWTPayload {
   name?: string
 }
 
+export async function verifyToken(token: string): Promise<AuthPayload | null> {
+  try {
+    const { payload } = await jwtVerify<AuthPayload>(token, JWKS, {
+      issuer: ZITADEL_ISSUER,
+      ...(PROJECT_ID ? { audience: PROJECT_ID } : {}),
+    })
+    return payload
+  } catch {
+    return null
+  }
+}
+
 export async function requireAuth(
   request: FastifyRequest,
   reply: FastifyReply,

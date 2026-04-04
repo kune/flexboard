@@ -5,6 +5,7 @@ import { Board } from '../models/board.js'
 import { Card } from '../models/card.js'
 import { Comment } from '../models/comment.js'
 import { ActivityLog } from '../models/activitylog.js'
+import { broadcast } from '../lib/sse.js'
 
 type AuthRequest = { user: AuthPayload }
 
@@ -58,6 +59,7 @@ export async function commentRoutes(app: FastifyInstance): Promise<void> {
       event: 'comment.added',
       payload: { commentId: comment.id },
     })
+    broadcast(boardId, 'comment.added', { boardId, cardId })
     return reply.code(201).send(comment)
   })
 

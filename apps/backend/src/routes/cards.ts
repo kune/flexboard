@@ -4,6 +4,7 @@ import { requireAuth, type AuthPayload } from '../lib/auth.js'
 import { Board } from '../models/board.js'
 import { Card } from '../models/card.js'
 import { ActivityLog } from '../models/activitylog.js'
+import { broadcast } from '../lib/sse.js'
 
 type AuthRequest = { user: AuthPayload }
 
@@ -58,6 +59,7 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
       event: 'card.created',
       payload: { type, title: card.title },
     })
+    broadcast(boardId, 'card.created', { boardId, cardId: card.id, columnId })
     return reply.code(201).send(card)
   })
 
@@ -116,14 +118,17 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
           event: 'card.moved',
           payload: { toColumnId: columnId },
         })
+        broadcast(boardId, 'card.moved', { boardId, cardId: card.id, toColumnId: columnId })
       } else if (changedFields.some((f) => f !== 'columnId')) {
+        const fields = changedFields.filter((f) => f !== 'columnId')
         await ActivityLog.create({
           cardId: card._id,
           boardId: new mongoose.Types.ObjectId(boardId),
           actorId: sub,
           event: 'card.updated',
-          payload: { fields: changedFields.filter((f) => f !== 'columnId') },
+          payload: { fields },
         })
+        broadcast(boardId, 'card.updated', { boardId, cardId: card.id, fields })
       }
       return card
     },
@@ -144,6 +149,7 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
       const card = await Card.findOne({ _id: id, boardId })
       if (!card) return reply.code(404).send({ error: 'Not found' })
       await card.deleteOne()
+      broadcast(boardId, 'card.deleted', { boardId, cardId: id })
       return reply.code(204).send()
     },
   )

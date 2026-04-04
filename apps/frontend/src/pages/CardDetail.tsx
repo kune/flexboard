@@ -9,6 +9,7 @@ import {
   getActivity,
 } from '@/lib/api'
 import { useUiStore } from '@/store/uiStore'
+import { useBoardSSE } from '@/hooks/useBoardSSE'
 import { AttributeRow, AttributeInput, AttributeValue } from '@/components/AttributeField'
 
 // ── Helpers ───────────────────────────────────────────────
@@ -282,6 +283,8 @@ export default function CardDetail() {
       navigate(`/boards/${boardId}`)
     },
   })
+
+  useBoardSSE(boardId)
 
   const columnName = columns?.find((c) => c.id === card?.columnId)?.name ?? '—'
 

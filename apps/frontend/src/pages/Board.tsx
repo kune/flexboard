@@ -31,6 +31,7 @@ import {
   deleteCard,
 } from '@/lib/api'
 import { useUiStore } from '@/store/uiStore'
+import { useBoardSSE } from '@/hooks/useBoardSSE'
 
 // ── Badge ─────────────────────────────────────────────────
 
@@ -289,6 +290,8 @@ export default function Board() {
     setBoardName(board?.name ?? null)
     return () => setBoardName(null)
   }, [board?.name, setBoardName])
+
+  useBoardSSE(boardId)
 
   // Keep local copy for optimistic dnd updates
   useEffect(() => {

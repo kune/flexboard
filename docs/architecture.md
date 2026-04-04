@@ -1,8 +1,8 @@
 # Flexboard – Architecture Document
 
-> **Version:** 0.3  
+> **Version:** 0.4  
 > **Date:** 2026-04-04  
-> **Status:** Updated — reflects Phase 1–3 + Track B (comments, activity log, attribute fields)
+> **Status:** Updated — reflects Phase 1–3 + Track A (SSE) + Track B (comments, activity, attributes)
 
 ---
 
@@ -324,7 +324,7 @@ All endpoints except authentication-related routes require a valid `Authorizatio
 | `GET` | `/card-types` | ✅ | List all card type schemas, sorted by type |
 | `GET` | `/card-types/:type` | ⬜ | Get schema for a specific type — Phase 4 |
 | **Real-time** | | | |
-| `GET` | `/boards/:id/events` | ⬜ | SSE stream for board-scoped events — Phase 4 |
+| `GET` | `/boards/:boardId/events?token=` | ✅ | SSE stream for board-scoped events; token passed as query param |
 
 ### 6.2 Filtering
 
@@ -612,11 +612,13 @@ src/
 ├── components/
 │   ├── Nav.tsx              # Sticky nav — logo, breadcrumb, user avatar + sign-out dropdown
 │   └── AttributeField.tsx   # Three exports: AttributeValue (read), AttributeInput (edit), AttributeRow (sidebar)
+├── hooks/
+│   └── useBoardSSE.ts       # Opens EventSource with ?token=; invalidates queries on events; reconnects with backoff
 ├── pages/
 │   ├── AuthCallback.tsx     # OIDC redirect handler → completes code exchange
 │   ├── Dashboard.tsx        # Board grid + "New Board" modal
-│   ├── Board.tsx            # Kanban view — columns, cards, dnd-kit drag-and-drop
-│   └── CardDetail.tsx       # Two-panel detail — dynamic attribute fields, comments, activity log
+│   ├── Board.tsx            # Kanban view — columns, cards, dnd-kit drag-and-drop; SSE wired
+│   └── CardDetail.tsx       # Two-panel detail — dynamic attribute fields, comments, activity log; SSE wired
 ├── store/
 │   └── uiStore.ts           # Zustand: breadcrumb board name (expandable)
 ├── lib/
@@ -781,3 +783,4 @@ All runtime configuration is provided via environment variables. Secrets are nev
 | ADR-09 | Backend technology | **Node.js 22 + Fastify + TypeScript** | Same language as frontend enables shared Zod schemas and types via `packages/shared`; Fastify has lower memory footprint (~60–150 MB) and better performance than Spring Boot; preferred over Go to preserve monorepo code sharing |
 | ADR-10 | Frontend styling | **Plain CSS (`src/index.css`)** | shadcn/ui + Tailwind were the original plan, but the HTML mockups already defined a complete, consistent design system. Transcribing that directly to a single CSS file was faster, removed a large dependency chain, and produced pixel-faithful results. May revisit if component reuse demands grow. |
 | ADR-11 | Zitadel login UI | **Login V1 (bundled)** | Zitadel v4.13.1's Login V2 requires the `session.link` permission for `OIDCService/CreateCallback`, which is not mapped to any standard role in this version. All attempts to grant it failed with `AUTH-AWfge: No matching permissions found`. Login V1 is bundled directly in the Zitadel binary and works without additional permissions. Forced via `ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"` (must be set before first DB init). |
+| ADR-12 | SSE authentication | **Access token in `?token=` query param** | The browser's `EventSource` API does not support custom request headers, making the standard `Authorization: Bearer` pattern impossible. Alternatives considered: (1) short-lived SSE-specific tokens — adds complexity; (2) cookies — requires changing the OIDC token storage strategy. Query-param token is the established pattern for SSE auth in single-page apps. The exposure risk is low in a self-hosted deployment over localhost/private network. |
