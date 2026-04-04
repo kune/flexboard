@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flexboard – Board View</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-icon">F</div>
+    Flexboard
+  </div>
+  <div class="nav-crumb">
+    <span class="nav-crumb-sep">/</span>
+    <a href="dashboard.html">My Boards</a>
+    <span class="nav-crumb-sep">/</span>
+    <span class="nav-crumb-current">Project Alpha</span>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-search-wrap">
+    <span class="nav-search-icon">🔍</span>
+    <input class="nav-search" type="text" placeholder="Search cards…" id="searchInput">
+  </div>
+  <button class="nav-icon-btn" title="Notifications">🔔</button>
+  <div class="nav-avatar">A</div>
+</nav>
+
+<div class="toolbar">
+  <button class="toolbar-btn">Filter ▾</button>
+  <button class="toolbar-btn active">Assignee: All ▾</button>
+  <button class="toolbar-btn">Type ▾</button>
+  <button class="toolbar-btn">Label ▾</button>
+  <div class="toolbar-spacer"></div>
+  <a href="card-form.html"><button class="btn btn-primary btn-sm">+ New Card</button></a>
+  <a href="search.html"><button class="btn btn-secondary btn-sm">🔍 Search</button></a>
+</div>
+
+<div class="kanban-wrap">
+
+  <!-- BACKLOG -->
+  <div class="kanban-col">
+    <div class="kanban-col-header">
+      <div class="kanban-col-title">
+        <span class="col-dot col-dot-gray"></span>
+        Backlog
+        <span class="col-count">4</span>
+      </div>
+      <button class="btn-link">+ Add</button>
+    </div>
+    <div class="kanban-col-body">
+
+      <a href="card-detail.html" class="kcard">
+        <div class="kcard-top">
+          <span class="badge badge-story">story</span>
+          <span class="kcard-id">#42</span>
+        </div>
+        <div class="kcard-title">Add comment feature to cards</div>
+        <div class="kcard-footer">
+          <span class="label-tag">ux</span>
+          <span class="label-tag">feat</span>
+          <span class="prio-dot prio-medium" title="Medium priority"></span>
+          <span class="avatar avatar-sm av-purple" style="margin-left:auto;" title="Maria">M</span>
+        </div>
+      </a>
+
+      <a href="card-detail.html" class="kcard">
+        <div class="kcard-top">
+          <span class="badge badge-task">task</span>
+          <span class="kcard-id">#41</span>
+        </div>
+        <div class="kcard-title">Set up CI/CD pipeline for staging</div>
+        <div class="kcard-footer">
+          <span class="label-tag">infra</span>
+          <span class="prio-dot prio-low" title="Low priority"></span>
+          <span class="avatar avatar-sm av-blue" style="margin-left:auto;" title="Alex">A</span>
+        </div>
+      </a>
+
+      <a href="card-detail.html" class="kcard">
+        <div class="kcard-top">
+          <span class="badge badge-bug">bug</span>
+          <span class="kcard-id">#39</span>
+        </div>
+        <div class="kcard-title">Avatar upload fails silently on slow connections</div>
+        <div class="kcard-footer">
+          <span class="label-tag">upload</span>
+          <span class="prio-dot prio-high" title="High priority"></span>
+          <span class="avatar avatar-sm av-green" style="margin-left:auto;" title="Julia">J</span>
+        </div>
+      </a>
+
+      <a href="card-detail.html" class="kcard">
+        <div class="kcard-top">
+          <span class="badge badge-epic">epic</span>
+          <span class="kcard-id">#36</span>
+        </div>
+        <div class="kcard-title">Real-time collaboration via WebSocket</div>
+        <div class="kcard-footer">
+          <span class="label-tag">realtime</span>
+          <span class="prio-dot prio-medium" title="Medium priority"></span>
+        </div>
+      </a>
+
+    </div>
+    <button class="kanban-add-btn">+ Add card</button>
+  </div>
+
+  <!-- IN PROGRESS -->
+  <div class="kanban-col">
+    <div class="kanban-col-header">
+      <div class="kanban-col-title">
+        <span class="col-dot col-dot-blue"></span>
+        In Progress
+        <span class="col-count">2</span>
+      </div>
+      <button class="btn-link">+ Add</button>
+    </div>
+    <div class="kanban-col-body">
+
+      <a href="card-detail.html" class="kcard">
+        <div class="kcard-top">
+          <span class="badge badge-bug">bug</span>
+          <span class="kcard-id">#38</span>
+        </div>
+        <div class="kcard-title">Login fails on Safari 17 when cookies are disabled</div>
+        <div class="kcard-footer">
+          <span class="label-tag">auth</span>
+          <span class="prio-dot prio-critical" title="Critical priority"></span>
+          <span style="font-size:10px; color:#dc2626; font-weight:600;">CRITICAL</span>
+          <span class="avatar avatar-sm av-purple" style="margin-left:auto;" title="Maria">M</span>
+        </div>
+      </a>
+
+      <a href="card-detail.html" class="kcard">
+        <div class="kcard-top">
+          <span class="badge badge-story">story</span>
+          <span class="kcard-id">#37</span>
+        </div>
+        <div class="kcard-title">As a user I want to filter cards by assignee</div>
+        <div class="kcard-footer">
+          <span class="label-tag">filter</span>
+          <span class="label-tag">ux</span>
+          <span class="prio-dot prio-high" title="High priority"></span>
+          <span class="avatar avatar-sm av-blue" style="margin-left:auto;" title="Alex">A</span>
+        </div>
+      </a>
+
+    </div>
+    <button class="kanban-add-btn">+ Add card</button>
+  </div>
+
+  <!-- IN REVIEW -->
+  <div class="kanban-col">
+    <div class="kanban-col-header">
+      <div class="kanban-col-title">
+        <span class="col-dot col-dot-yellow"></span>
+        In Review
+        <span class="col-count">1</span>
+      </div>
+      <button class="btn-link">+ Add</button>
+    </div>
+    <div class="kanban-col-body">
+
+      <a href="card-detail.html" class="kcard">
+        <div class="kcard-top">
+          <span class="badge badge-task">task</span>
+          <span class="kcard-id">#35</span>
+        </div>
+        <div class="kcard-title">Update OpenAPI docs for /cards endpoints</div>
+        <div class="kcard-footer">
+          <span class="label-tag">docs</span>
+          <span class="prio-dot prio-low" title="Low priority"></span>
+          <span style="font-size:11px; color:#64748b;">Apr 10</span>
+          <span class="avatar avatar-sm av-blue" style="margin-left:auto;" title="Alex">A</span>
+        </div>
+      </a>
+
+    </div>
+    <button class="kanban-add-btn">+ Add card</button>
+  </div>
+
+  <!-- DONE -->
+  <div class="kanban-col">
+    <div class="kanban-col-header">
+      <div class="kanban-col-title">
+        <span class="col-dot col-dot-green"></span>
+        Done
+        <span class="col-count">3</span>
+      </div>
+    </div>
+    <div class="kanban-col-body">
+
+      <a href="card-detail.html" class="kcard" style="opacity:.7;">
+        <div class="kcard-top">
+          <span class="badge badge-task">task</span>
+          <span class="kcard-id">#31</span>
+        </div>
+        <div class="kcard-title">Auth refactor – replace legacy session middleware</div>
+        <div class="kcard-footer">
+          <span class="label-tag">auth</span>
+          <span class="avatar avatar-sm av-blue" style="margin-left:auto;">A</span>
+        </div>
+      </a>
+
+      <a href="card-detail.html" class="kcard" style="opacity:.7;">
+        <div class="kcard-top">
+          <span class="badge badge-story">story</span>
+          <span class="kcard-id">#29</span>
+        </div>
+        <div class="kcard-title">Board overview page with grid layout</div>
+        <div class="kcard-footer">
+          <span class="label-tag">ux</span>
+          <span class="avatar avatar-sm av-purple" style="margin-left:auto;">M</span>
+        </div>
+      </a>
+
+      <a href="card-detail.html" class="kcard" style="opacity:.7;">
+        <div class="kcard-top">
+          <span class="badge badge-bug">bug</span>
+          <span class="kcard-id">#28</span>
+        </div>
+        <div class="kcard-title">Card drag leaves ghost element on Firefox</div>
+        <div class="kcard-footer">
+          <span class="label-tag">dnd</span>
+          <span class="avatar avatar-sm av-green" style="margin-left:auto;">J</span>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- Add column placeholder -->
+  <div style="flex:0 0 180px; min-width:180px; display:flex; align-items:flex-start; padding-top:4px;">
+    <button style="width:100%; padding:10px 14px; border:2px dashed #cbd5e1; border-radius:10px; background:none; color:#94a3b8; font-size:13px; cursor:pointer; transition:all .15s;" onmouseover="this.style.borderColor='#2563eb';this.style.color='#2563eb'" onmouseout="this.style.borderColor='#cbd5e1';this.style.color='#94a3b8'">
+      + Add column
+    </button>
+  </div>
+
+</div>
+
+<!-- Mockup Navigator -->
+<div class="mockup-nav-widget">
+  <button class="mockup-nav-toggle" onclick="toggleNav(event)" title="Navigate mockups">⊞</button>
+  <div class="mockup-nav-menu" id="mockupMenu">
+    <div class="mockup-nav-header">Mockup Screens</div>
+    <a href="index.html"       class="mockup-nav-link"><span class="mockup-nav-icon">🗂</span> Overview</a>
+    <a href="dashboard.html"   class="mockup-nav-link"><span class="mockup-nav-icon">🏠</span> M-01 Dashboard</a>
+    <a href="board.html"       class="mockup-nav-link current"><span class="mockup-nav-icon">📋</span> M-02 Board View</a>
+    <a href="card-detail.html" class="mockup-nav-link"><span class="mockup-nav-icon">🃏</span> M-03 Card Detail</a>
+    <a href="card-form.html"   class="mockup-nav-link"><span class="mockup-nav-icon">✏️</span> M-04 New Card</a>
+    <a href="search.html"      class="mockup-nav-link"><span class="mockup-nav-icon">🔍</span> M-05 Search</a>
+  </div>
+</div>
+
+<script>
+  function toggleNav(e) {
+    e.stopPropagation();
+    document.getElementById('mockupMenu').classList.toggle('open');
+  }
+  document.addEventListener('click', () => {
+    document.getElementById('mockupMenu').classList.remove('open');
+  });
+
+  // Search input navigates to search page
+  document.getElementById('searchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') window.location.href = 'search.html';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+# Card Type Schema Definitions
+# Source of truth — seeded into MongoDB (card_type_schemas collection) on backend startup.
+# Adding a new type or attribute requires updating this file and restarting the backend container.
+
+- type: task
+  label: Task
+  attributes:
+    - key: assignee
+      type: reference
+      required: false
+    - key: priority
+      type: enum
+      required: false
+      values: [low, medium, high, critical]
+    - key: labels
+      type: string[]
+      required: false
+    - key: due_date
+      type: date
+      required: false
+
+- type: bug
+  label: Bug
+  attributes:
+    - key: assignee
+      type: reference
+      required: false
+    - key: priority
+      type: enum
+      required: true
+      values: [low, medium, high, critical]
+    - key: labels
+      type: string[]
+      required: false
+    - key: environment
+      type: enum
+      required: false
+      values: [production, staging, local]
+    - key: steps_to_reproduce
+      type: markdown
+      required: false
+
+- type: story
+  label: Story
+  attributes:
+    - key: assignee
+      type: reference
+      required: false
+    - key: priority
+      type: enum
+      required: false
+      values: [low, medium, high, critical]
+    - key: story_points
+      type: number
+      required: false
+    - key: labels
+      type: string[]
+      required: false
+    - key: due_date
+      type: date
+      required: false
+    - key: acceptance_criteria
+      type: markdown
+      required: false
+    - key: epic
+      type: reference
+      required: false
+    - key: sprint
+      type: string
+      required: false
+
+- type: epic
+  label: Epic
+  attributes:
+    - key: assignee
+      type: reference
+      required: false
+    - key: priority
+      type: enum
+      required: false
+      values: [low, medium, high, critical]
+    - key: labels
+      type: string[]
+      required: false
+    - key: due_date
+      type: date
+      required: false
+    - key: goals
+      type: markdown
+      required: false

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flexboard – New Card</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-icon">F</div>
+    Flexboard
+  </div>
+  <div class="nav-crumb">
+    <span class="nav-crumb-sep">/</span>
+    <a href="dashboard.html">My Boards</a>
+    <span class="nav-crumb-sep">/</span>
+    <a href="board.html">Project Alpha</a>
+    <span class="nav-crumb-sep">/</span>
+    <span class="nav-crumb-current">New Card</span>
+  </div>
+  <div class="nav-spacer"></div>
+  <button class="nav-icon-btn">🔔</button>
+  <div class="nav-avatar">A</div>
+</nav>
+
+<div class="form-page">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:20px; font-weight:700;">New Card</h1>
+      <p class="text-muted text-sm" style="margin-top:3px;">Project Alpha · Backlog</p>
+    </div>
+    <a href="board.html"><button class="btn btn-ghost">← Cancel</button></a>
+  </div>
+
+  <!-- Card Type -->
+  <div class="form-card">
+    <div class="form-card-title">Card Type</div>
+    <div class="type-selector" id="typeSelector">
+      <button class="type-label active-task" data-type="task" onclick="selectType('task')">📌 Task</button>
+      <button class="type-label" data-type="bug" onclick="selectType('bug')">🐛 Bug</button>
+      <button class="type-label active" data-type="story" onclick="selectType('story')" style="background:#ede9fe; color:#6d28d9; border-color:#c4b5fd; font-weight:600;">📖 Story</button>
+      <button class="type-label" data-type="epic" onclick="selectType('epic')">⚡ Epic</button>
+    </div>
+  </div>
+
+  <!-- Core fields -->
+  <div class="form-card">
+    <div class="form-card-title">Content</div>
+
+    <div class="form-group">
+      <label class="form-label">Title <span class="form-label-req">*</span></label>
+      <input class="form-input" type="text" placeholder="As a user I want to…" value="Add comment feature to cards">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <div class="md-editor">
+        <div class="md-tabs">
+          <button class="md-tab active" data-target="desc-write" onclick="switchTab(this, 'desc')">Write</button>
+          <button class="md-tab" data-target="desc-preview" onclick="switchTab(this, 'desc')">Preview</button>
+        </div>
+        <textarea class="md-write" id="desc-write" placeholder="Describe the card… Markdown supported">## Background
+
+As a user I want to be able to add comments to cards so that team members can discuss the task inline without leaving the board.
+
+## Scope
+
+- Comment input at the bottom of card detail
+- Markdown rendering for comments
+- Author, timestamp, edit & delete</textarea>
+        <div class="md-preview" id="desc-preview" style="display:none;">
+          <h2>Background</h2>
+          <p>As a user I want to be able to add comments to cards so that team members can discuss the task inline without leaving the board.</p>
+          <h2>Scope</h2>
+          <ul>
+            <li>Comment input at the bottom of card detail</li>
+            <li>Markdown rendering for comments</li>
+            <li>Author, timestamp, edit &amp; delete</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Acceptance Criteria</label>
+      <div class="md-editor">
+        <div class="md-tabs">
+          <button class="md-tab active" data-target="ac-write" onclick="switchTab(this, 'ac')">Write</button>
+          <button class="md-tab" data-target="ac-preview" onclick="switchTab(this, 'ac')">Preview</button>
+        </div>
+        <textarea class="md-write" id="ac-write" placeholder="- [ ] Criterion one&#10;- [ ] Criterion two">- [ ] Comment input visible on card detail
+- [ ] Markdown is rendered correctly
+- [ ] Timestamps shown in local timezone
+- [ ] Author can edit within 15 minutes
+- [ ] Activity log entry created</textarea>
+        <div class="md-preview" id="ac-preview" style="display:none;">
+          <ul>
+            <li>☐ Comment input visible on card detail</li>
+            <li>☐ Markdown is rendered correctly</li>
+            <li>☐ Timestamps shown in local timezone</li>
+            <li>☐ Author can edit within 15 minutes</li>
+            <li>☐ Activity log entry created</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Attributes -->
+  <div class="form-card">
+    <div class="form-card-title">Attributes</div>
+
+    <div class="form-grid-2">
+
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select">
+          <option selected>Backlog</option>
+          <option>In Progress</option>
+          <option>In Review</option>
+          <option>Done</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Assignee</label>
+        <select class="form-select">
+          <option value="">— Unassigned —</option>
+          <option>Alex</option>
+          <option selected>Maria</option>
+          <option>Julia</option>
+          <option>Kai</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Priority</label>
+        <select class="form-select">
+          <option>Low</option>
+          <option selected>Medium</option>
+          <option>High</option>
+          <option>Critical</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Story Points</label>
+        <input class="form-input" type="number" min="0" max="100" placeholder="—" value="5">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Due Date</label>
+        <input class="form-input" type="date" value="2026-04-20">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Column</label>
+        <select class="form-select">
+          <option selected>Backlog</option>
+          <option>In Progress</option>
+          <option>In Review</option>
+          <option>Done</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Labels</label>
+      <div class="tags-wrap" onclick="this.querySelector('.tags-input-field').focus()">
+        <span class="tag-chip">ux <button class="tag-remove" onclick="removeTag(this)">×</button></span>
+        <span class="tag-chip">feat <button class="tag-remove" onclick="removeTag(this)">×</button></span>
+        <input class="tags-input-field" type="text" placeholder="Add label…" onkeydown="addTag(event, this)">
+      </div>
+      <p class="text-xs text-light" style="margin-top:5px;">Press Enter or comma to add a label</p>
+    </div>
+
+  </div>
+
+  <!-- Story-specific fields (shown only for 'story' type) -->
+  <div class="form-card" id="storyFields">
+    <div class="form-card-title">Story-specific Fields</div>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="form-label">Epic</label>
+        <select class="form-select">
+          <option value="">— No epic —</option>
+          <option selected>#36 Real-time collaboration</option>
+          <option>#22 Notification system</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sprint</label>
+        <select class="form-select">
+          <option value="">— No sprint —</option>
+          <option selected>Sprint 7 (Apr 14–28)</option>
+          <option>Sprint 8 (Apr 28–May 12)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bug-specific fields (hidden by default) -->
+  <div class="form-card" id="bugFields" style="display:none;">
+    <div class="form-card-title">Bug-specific Fields</div>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label class="form-label">Environment</label>
+        <select class="form-select">
+          <option>Production</option>
+          <option>Staging</option>
+          <option>Local</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Browser / Platform</label>
+        <input class="form-input" type="text" placeholder="e.g. Safari 17, iOS 17">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Steps to Reproduce</label>
+      <textarea class="form-input form-textarea" placeholder="1. Go to …&#10;2. Click on …&#10;3. Observe …"></textarea>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <a href="board.html"><button class="btn btn-secondary">Cancel</button></a>
+    <a href="card-detail.html"><button class="btn btn-primary">Create Card</button></a>
+  </div>
+
+</div>
+
+<!-- Mockup Navigator -->
+<div class="mockup-nav-widget">
+  <button class="mockup-nav-toggle" onclick="toggleNav(event)" title="Navigate mockups">⊞</button>
+  <div class="mockup-nav-menu" id="mockupMenu">
+    <div class="mockup-nav-header">Mockup Screens</div>
+    <a href="index.html"       class="mockup-nav-link"><span class="mockup-nav-icon">🗂</span> Overview</a>
+    <a href="dashboard.html"   class="mockup-nav-link"><span class="mockup-nav-icon">🏠</span> M-01 Dashboard</a>
+    <a href="board.html"       class="mockup-nav-link"><span class="mockup-nav-icon">📋</span> M-02 Board View</a>
+    <a href="card-detail.html" class="mockup-nav-link"><span class="mockup-nav-icon">🃏</span> M-03 Card Detail</a>
+    <a href="card-form.html"   class="mockup-nav-link current"><span class="mockup-nav-icon">✏️</span> M-04 New Card</a>
+    <a href="search.html"      class="mockup-nav-link"><span class="mockup-nav-icon">🔍</span> M-05 Search</a>
+  </div>
+</div>
+
+<script>
+  // Mockup nav
+  function toggleNav(e) {
+    e.stopPropagation();
+    document.getElementById('mockupMenu').classList.toggle('open');
+  }
+  document.addEventListener('click', () => {
+    document.getElementById('mockupMenu').classList.remove('open');
+  });
+
+  // Markdown Write/Preview toggle
+  function switchTab(btn, group) {
+    const editor = btn.closest('.md-editor');
+    editor.querySelectorAll('.md-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    const targetId = btn.getAttribute('data-target');
+    const writeId = group + '-write';
+    const previewId = group + '-preview';
+    document.getElementById(writeId).style.display = (targetId === writeId) ? 'block' : 'none';
+    document.getElementById(previewId).style.display = (targetId === previewId) ? 'block' : 'none';
+  }
+
+  // Card type selector
+  const typeColors = {
+    task:  { bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd' },
+    bug:   { bg: '#fee2e2', color: '#b91c1c', border: '#fca5a5' },
+    story: { bg: '#ede9fe', color: '#6d28d9', border: '#c4b5fd' },
+    epic:  { bg: '#ffedd5', color: '#c2410c', border: '#fdba74' },
+  };
+
+  function selectType(type) {
+    document.querySelectorAll('#typeSelector .type-label').forEach(btn => {
+      const t = btn.getAttribute('data-type');
+      if (t === type) {
+        const c = typeColors[t];
+        btn.style.background = c.bg;
+        btn.style.color = c.color;
+        btn.style.borderColor = c.border;
+        btn.style.fontWeight = '600';
+      } else {
+        btn.style.background = '';
+        btn.style.color = '#64748b';
+        btn.style.borderColor = '#e2e8f0';
+        btn.style.fontWeight = '500';
+      }
+    });
+    // Show type-specific sections
+    document.getElementById('storyFields').style.display = type === 'story' ? 'block' : 'none';
+    document.getElementById('bugFields').style.display   = type === 'bug'   ? 'block' : 'none';
+  }
+
+  // Tag input
+  function addTag(e, input) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = input.value.replace(',', '').trim();
+      if (!val) return;
+      const chip = document.createElement('span');
+      chip.className = 'tag-chip';
+      chip.innerHTML = val + ' <button class="tag-remove" onclick="removeTag(this)">×</button>';
+      input.parentNode.insertBefore(chip, input);
+      input.value = '';
+    }
+  }
+
+  function removeTag(btn) {
+    btn.closest('.tag-chip').remove();
+  }
+</script>
+</body>
+</html>

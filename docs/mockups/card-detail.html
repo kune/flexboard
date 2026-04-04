@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flexboard – Card Detail</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-icon">F</div>
+    Flexboard
+  </div>
+  <div class="nav-crumb">
+    <span class="nav-crumb-sep">/</span>
+    <a href="dashboard.html">My Boards</a>
+    <span class="nav-crumb-sep">/</span>
+    <a href="board.html">Project Alpha</a>
+    <span class="nav-crumb-sep">/</span>
+    <span class="nav-crumb-current">#42</span>
+  </div>
+  <div class="nav-spacer"></div>
+  <button class="nav-icon-btn">🔔</button>
+  <div class="nav-avatar">A</div>
+</nav>
+
+<div class="detail-layout">
+
+  <!-- ── Left: Main content ── -->
+  <div class="detail-main">
+
+    <div class="detail-topbar">
+      <a href="board.html"><button class="btn btn-ghost btn-sm">← Back to board</button></a>
+      <span class="badge badge-story">story</span>
+      <span class="text-muted text-sm">#42</span>
+      <span class="status-pill status-in-progress" style="margin-left:4px;">● In Progress</span>
+      <div style="flex:1;"></div>
+      <a href="card-form.html"><button class="btn btn-secondary btn-sm">Edit</button></a>
+      <button class="btn btn-ghost btn-sm" style="color:#ef4444;">Delete</button>
+    </div>
+
+    <h1 class="detail-title">Add comment feature to cards</h1>
+
+    <!-- Description -->
+    <div class="detail-section">
+      <div class="detail-section-label">
+        Description
+        <a href="card-form.html"><button class="btn btn-ghost btn-sm">Edit</button></a>
+      </div>
+      <div class="prose">
+        <h2>Background</h2>
+        <p>
+          As a user I want to be able to add comments to cards so that team members can
+          discuss the task inline without leaving the board. Currently all discussion
+          happens in external channels (Slack, email) and context is lost.
+        </p>
+        <h2>Scope</h2>
+        <ul>
+          <li>Comment input field at the bottom of the card detail view</li>
+          <li>Comments support Markdown formatting</li>
+          <li>Each comment shows author avatar, name, and timestamp</li>
+          <li>Comments can be edited and deleted by their author</li>
+          <li>Activity log distinguishes between comments and system events</li>
+        </ul>
+        <h2>Notes</h2>
+        <p>
+          Refer to Figma design v3 for interaction details. Mobile layout still TBD.
+          Backend endpoint: <code>POST /api/v1/cards/:id/comments</code>
+        </p>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Acceptance Criteria -->
+    <div class="detail-section">
+      <div class="detail-section-label">
+        Acceptance Criteria
+        <button class="btn btn-ghost btn-sm">Edit</button>
+      </div>
+      <div class="prose">
+        <ul class="task-list">
+          <li><input type="checkbox" checked> Comment input field visible on card detail</li>
+          <li><input type="checkbox" checked> Markdown is rendered correctly in comments</li>
+          <li><input type="checkbox"> Timestamps shown in local timezone</li>
+          <li><input type="checkbox"> Author can edit their own comment within 15 minutes</li>
+          <li><input type="checkbox"> Author can delete their own comment</li>
+          <li><input type="checkbox"> Activity log entry created on new comment</li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Activity -->
+    <div class="detail-section">
+      <div class="detail-section-label">Activity</div>
+
+      <div class="activity-item">
+        <span class="avatar avatar-md av-blue">A</span>
+        <div class="activity-body">
+          <div class="activity-text"><strong>Alex</strong> changed status from <em>Backlog</em> to <em>In Progress</em></div>
+          <div class="activity-time">Apr 3, 09:14</div>
+        </div>
+      </div>
+
+      <div class="activity-item">
+        <span class="avatar avatar-md av-purple">M</span>
+        <div class="activity-body">
+          <div class="activity-text"><strong>Maria</strong> commented:<br>
+            <span style="display:block; margin-top:4px; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:13px; color:#374151; line-height:1.5;">
+              I've sketched out the UI in Figma. The main question is whether we show the Markdown toolbar by default or only on focus. I'd lean towards focus-only to keep it clean.
+            </span>
+          </div>
+          <div class="activity-time">Apr 2, 17:05</div>
+        </div>
+      </div>
+
+      <div class="activity-item">
+        <span class="avatar avatar-md av-purple">M</span>
+        <div class="activity-body">
+          <div class="activity-text"><strong>Maria</strong> was assigned to this card</div>
+          <div class="activity-time">Apr 2, 16:58</div>
+        </div>
+      </div>
+
+      <div class="activity-item">
+        <span class="avatar avatar-md av-blue">A</span>
+        <div class="activity-body">
+          <div class="activity-text"><strong>Alex</strong> created this card</div>
+          <div class="activity-time">Apr 1, 11:30</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Comment input -->
+    <div class="comment-input-box">
+      <textarea placeholder="Add a comment… Markdown is supported"></textarea>
+      <div class="comment-input-footer">
+        <span class="comment-hint">Markdown supported · <kbd style="font-size:10px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:3px; padding:1px 4px;">Ctrl+Enter</kbd> to submit</span>
+        <button class="btn btn-primary btn-sm">Comment</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Right: Sidebar ── -->
+  <div class="detail-sidebar">
+
+    <!-- Core attributes -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Details</div>
+
+      <div class="sidebar-field">
+        <span class="sidebar-field-label">Status</span>
+        <span class="sidebar-field-value">
+          <span class="status-pill status-in-progress">● In Progress</span>
+        </span>
+      </div>
+
+      <div class="sidebar-field">
+        <span class="sidebar-field-label">Assignee</span>
+        <span class="sidebar-field-value flex items-center gap-2" style="justify-content:flex-end;">
+          <span class="avatar avatar-sm av-purple">M</span>
+          Maria
+        </span>
+      </div>
+
+      <div class="sidebar-field">
+        <span class="sidebar-field-label">Priority</span>
+        <span class="sidebar-field-value flex items-center gap-2" style="justify-content:flex-end;">
+          <span class="prio-dot prio-medium"></span>
+          Medium
+        </span>
+      </div>
+
+      <div class="sidebar-field">
+        <span class="sidebar-field-label">Labels</span>
+        <span class="sidebar-field-value flex gap-1" style="justify-content:flex-end; flex-wrap:wrap;">
+          <span class="label-tag">ux</span>
+          <span class="label-tag">feat</span>
+        </span>
+      </div>
+
+      <div class="sidebar-field">
+        <span class="sidebar-field-label">Due Date</span>
+        <span class="sidebar-field-value">Apr 20, 2026</span>
+      </div>
+
+      <div class="sidebar-field">
+        <span class="sidebar-field-label">Story Points</span>
+        <span class="sidebar-field-value">5</span>
+      </div>
+
+      <div class="sidebar-field">
+        <span class="sidebar-field-label">Created by</span>
+        <span class="sidebar-field-value flex items-center gap-2" style="justify-content:flex-end;">
+          <span class="avatar avatar-sm av-blue">A</span>
+          Alex
+        </span>
+      </div>
+
+      <div class="sidebar-field">
+        <span class="sidebar-field-label">Created</span>
+        <span class="sidebar-field-value text-muted">Apr 1, 2026</span>
+      </div>
+
+      <div class="sidebar-field">
+        <span class="sidebar-field-label">Updated</span>
+        <span class="sidebar-field-value text-muted">Apr 3, 2026</span>
+      </div>
+    </div>
+
+    <hr class="divider" style="margin: 12px 0;">
+
+    <!-- Linked cards -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Linked Cards</div>
+
+      <a href="card-detail.html" class="linked-card">
+        <span class="badge badge-bug" style="font-size:10px; padding:1px 5px;">bug</span>
+        <span>#38</span>
+        <span style="color:#64748b;">Login fails on Safari</span>
+      </a>
+
+      <a href="card-detail.html" class="linked-card">
+        <span class="badge badge-task" style="font-size:10px; padding:1px 5px;">task</span>
+        <span>#31</span>
+        <span style="color:#64748b;">Auth refactor</span>
+      </a>
+
+      <button class="btn btn-ghost btn-sm" style="margin-top:6px; font-size:12px; color:#2563eb;">+ Link a card</button>
+    </div>
+
+    <hr class="divider" style="margin: 12px 0;">
+
+    <!-- Board info -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Location</div>
+      <div class="text-sm text-muted" style="line-height:1.8;">
+        <div><strong>Board:</strong> Project Alpha</div>
+        <div><strong>Column:</strong> Backlog</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Mockup Navigator -->
+<div class="mockup-nav-widget">
+  <button class="mockup-nav-toggle" onclick="toggleNav(event)" title="Navigate mockups">⊞</button>
+  <div class="mockup-nav-menu" id="mockupMenu">
+    <div class="mockup-nav-header">Mockup Screens</div>
+    <a href="index.html"       class="mockup-nav-link"><span class="mockup-nav-icon">🗂</span> Overview</a>
+    <a href="dashboard.html"   class="mockup-nav-link"><span class="mockup-nav-icon">🏠</span> M-01 Dashboard</a>
+    <a href="board.html"       class="mockup-nav-link"><span class="mockup-nav-icon">📋</span> M-02 Board View</a>
+    <a href="card-detail.html" class="mockup-nav-link current"><span class="mockup-nav-icon">🃏</span> M-03 Card Detail</a>
+    <a href="card-form.html"   class="mockup-nav-link"><span class="mockup-nav-icon">✏️</span> M-04 New Card</a>
+    <a href="search.html"      class="mockup-nav-link"><span class="mockup-nav-icon">🔍</span> M-05 Search</a>
+  </div>
+</div>
+
+<script>
+  function toggleNav(e) {
+    e.stopPropagation();
+    document.getElementById('mockupMenu').classList.toggle('open');
+  }
+  document.addEventListener('click', () => {
+    document.getElementById('mockupMenu').classList.remove('open');
+  });
+</script>
+</body>
+</html>

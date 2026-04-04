@@ -1,0 +1,29 @@
+# Development overrides — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+name: flexboard
+
+services:
+
+  # In development, frontend and backend run via pnpm dev (hot reload).
+  # Only infrastructure services (MongoDB, Zitadel) run in Docker.
+
+  frontend:
+    # Disable in dev — run with: pnpm --filter @flexboard/frontend dev
+    profiles: ["disabled"]
+
+  backend:
+    # Disable in dev — run with: pnpm --filter @flexboard/backend dev
+    profiles: ["disabled"]
+
+  mongodb:
+    ports:
+      - "27017:27017"  # expose for local tooling (Compass, mongosh)
+
+  zitadel:
+    ports:
+      - "8080:8080"
+
+  zitadel-db:
+    ports:
+      - "5432:5432"  # expose for local inspection

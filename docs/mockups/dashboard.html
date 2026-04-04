@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flexboard – Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-icon">F</div>
+    Flexboard
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-search-wrap">
+    <span class="nav-search-icon">🔍</span>
+    <input class="nav-search" type="text" placeholder="Search boards and cards…">
+  </div>
+  <button class="nav-icon-btn" title="Notifications">🔔</button>
+  <div class="nav-avatar" title="Alex">A</div>
+</nav>
+
+<div class="page">
+
+  <!-- My Boards -->
+  <div class="page-header">
+    <h1 class="page-title">My Boards</h1>
+    <a href="card-form.html"><button class="btn btn-primary">+ New Board</button></a>
+  </div>
+
+  <div class="boards-grid">
+
+    <a href="board.html" class="board-tile">
+      <div class="board-tile-accent" style="background: #2563eb;"></div>
+      <div class="board-tile-body">
+        <div class="board-tile-title">Project Alpha</div>
+        <div class="board-tile-meta">
+          12 open cards · 3 assigned to me<br>
+          Last active: today
+        </div>
+      </div>
+      <div class="board-tile-footer">
+        <span class="avatar avatar-sm av-blue">A</span>
+        <span class="avatar avatar-sm av-purple">M</span>
+        <span class="avatar avatar-sm av-green">J</span>
+        <span class="text-xs text-light" style="margin-left:auto;">4 columns</span>
+      </div>
+    </a>
+
+    <a href="board.html" class="board-tile">
+      <div class="board-tile-accent" style="background: #7c3aed;"></div>
+      <div class="board-tile-body">
+        <div class="board-tile-title">Marketing Q2</div>
+        <div class="board-tile-meta">
+          5 open cards · 1 assigned to me<br>
+          Last active: Apr 1
+        </div>
+      </div>
+      <div class="board-tile-footer">
+        <span class="avatar avatar-sm av-orange">S</span>
+        <span class="avatar avatar-sm av-blue">A</span>
+        <span class="text-xs text-light" style="margin-left:auto;">3 columns</span>
+      </div>
+    </a>
+
+    <a href="board.html" class="board-tile">
+      <div class="board-tile-accent" style="background: #16a34a;"></div>
+      <div class="board-tile-body">
+        <div class="board-tile-title">Backend Refactor</div>
+        <div class="board-tile-meta">
+          8 open cards · 5 assigned to me<br>
+          Last active: Apr 3
+        </div>
+      </div>
+      <div class="board-tile-footer">
+        <span class="avatar avatar-sm av-blue">A</span>
+        <span class="avatar avatar-sm av-red">K</span>
+        <span class="text-xs text-light" style="margin-left:auto;">5 columns</span>
+      </div>
+    </a>
+
+    <div class="board-tile-new">
+      <div class="board-tile-new-icon">＋</div>
+      <span>New Board</span>
+    </div>
+
+  </div>
+
+  <!-- Shared Boards -->
+  <div class="section-label">Shared With Me</div>
+
+  <div class="boards-grid">
+
+    <a href="board.html" class="board-tile">
+      <div class="board-tile-accent" style="background: #ea580c;"></div>
+      <div class="board-tile-body">
+        <div class="board-tile-title">Platform Ops</div>
+        <div class="board-tile-meta">
+          8 open cards · 0 assigned to me<br>
+          Last active: Mar 30
+        </div>
+      </div>
+      <div class="board-tile-footer">
+        <span class="avatar avatar-sm av-green">J</span>
+        <span class="avatar avatar-sm av-purple">M</span>
+        <span class="avatar avatar-sm av-orange">S</span>
+        <span class="text-xs text-light" style="margin-left:auto;">Read only</span>
+      </div>
+    </a>
+
+    <a href="board.html" class="board-tile">
+      <div class="board-tile-accent" style="background: #db2777;"></div>
+      <div class="board-tile-body">
+        <div class="board-tile-title">Design System</div>
+        <div class="board-tile-meta">
+          3 open cards · 0 assigned to me<br>
+          Last active: Mar 28
+        </div>
+      </div>
+      <div class="board-tile-footer">
+        <span class="avatar avatar-sm av-purple">M</span>
+        <span class="text-xs text-light" style="margin-left:auto;">Read only</span>
+      </div>
+    </a>
+
+  </div>
+
+</div>
+
+<!-- Mockup Navigator -->
+<div class="mockup-nav-widget">
+  <button class="mockup-nav-toggle" onclick="toggleNav(event)" title="Navigate mockups">⊞</button>
+  <div class="mockup-nav-menu" id="mockupMenu">
+    <div class="mockup-nav-header">Mockup Screens</div>
+    <a href="index.html"       class="mockup-nav-link"><span class="mockup-nav-icon">🗂</span> Overview</a>
+    <a href="dashboard.html"   class="mockup-nav-link current"><span class="mockup-nav-icon">🏠</span> M-01 Dashboard</a>
+    <a href="board.html"       class="mockup-nav-link"><span class="mockup-nav-icon">📋</span> M-02 Board View</a>
+    <a href="card-detail.html" class="mockup-nav-link"><span class="mockup-nav-icon">🃏</span> M-03 Card Detail</a>
+    <a href="card-form.html"   class="mockup-nav-link"><span class="mockup-nav-icon">✏️</span> M-04 New Card</a>
+    <a href="search.html"      class="mockup-nav-link"><span class="mockup-nav-icon">🔍</span> M-05 Search</a>
+  </div>
+</div>
+
+<script>
+  function toggleNav(e) {
+    e.stopPropagation();
+    document.getElementById('mockupMenu').classList.toggle('open');
+  }
+  document.addEventListener('click', () => {
+    document.getElementById('mockupMenu').classList.remove('open');
+  });
+</script>
+</body>
+</html>
