@@ -93,7 +93,7 @@ docker compose up -d --build
 | Variable | Set by | Description |
 |----------|--------|-------------|
 | `ZITADEL_MASTERKEY` | You | 32-character encryption key for Zitadel |
-| `ZITADEL_ADMIN_PASSWORD` | You | Password for `admin@flexboard.localhost` |
+| `ZITADEL_ADMIN_PASSWORD` | You | Password for `admin@flexboard.localhost` (min 8 chars, upper + lower + digit + symbol) |
 | `ZITADEL_DB_PASSWORD` | You | Password for Zitadel's PostgreSQL database |
 | `VITE_ZITADEL_DOMAIN` | You | Public URL of Zitadel (`http://localhost` locally) |
 | `ZITADEL_PROJECT_ID` | `init.sh` | Zitadel project ID |
