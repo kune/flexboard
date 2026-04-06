@@ -1,19 +1,16 @@
 import { UserManager, WebStorageStateStore, type User } from 'oidc-client-ts'
 
-const ZITADEL_DOMAIN = import.meta.env.VITE_ZITADEL_DOMAIN ?? 'http://localhost:8080'
-const CLIENT_ID = import.meta.env.VITE_ZITADEL_CLIENT_ID as string
+const OIDC_AUTHORITY = import.meta.env.VITE_OIDC_AUTHORITY ?? 'http://localhost/dex'
+const CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID ?? 'flexboard-web'
 
 export const userManager = new UserManager({
-  authority: ZITADEL_DOMAIN,
+  authority: OIDC_AUTHORITY,
   client_id: CLIENT_ID,
   redirect_uri: `${window.location.origin}/auth/callback`,
   post_logout_redirect_uri: window.location.origin,
   response_type: 'code',
   scope: 'openid profile email',
   userStore: new WebStorageStateStore({ store: window.localStorage }),
-  // Fetch userinfo endpoint after signin so profile claims (preferred_username, name, …)
-  // are available — Zitadel does not embed them in the ID token by default.
-  loadUserInfo: true,
 })
 
 export function signIn(): Promise<void> {

@@ -7,100 +7,100 @@
 # Safe to re-run: skips steps that are already complete.
 set -euo pipefail
 
-ENV_FILE=".env"
-PAT_FILE="machinekey/sa.pat"
-ZITADEL_URL="${ZITADEL_URL:-http://localhost:8080}"
+DEX_CONFIG="config/dex.yaml"
 
 step() { echo; echo "▶  $*"; }
 log()  { echo "   $*"; }
 err()  { echo "ERROR: $*" >&2; exit 1; }
 
-# ── 1. Generate .env ──────────────────────────────────────────────────────────
-step "Environment"
-if [[ -f "$ENV_FILE" ]]; then
-  log "Found existing $ENV_FILE — skipping generation."
-else
-  command -v openssl >/dev/null || err "openssl is required to generate secrets."
+# Generate a bcrypt hash of $1.
+# Tries: (1) htpasswd, (2) python3 bcrypt module, (3) python3 venv + bcrypt.
+_bcrypt_hash() {
+  local password="$1"
+  # htpasswd is built in on macOS and available via apache2-utils on Debian/Ubuntu.
+  if command -v htpasswd >/dev/null 2>&1; then
+    htpasswd -nbBC 10 x "$password" | cut -d: -f2 | sed 's/^\$2y\$/\$2a\$/'
+    return
+  fi
+  # Python bcrypt module (already installed)
+  if python3 -c "import bcrypt" 2>/dev/null; then
+    python3 -c "
+import bcrypt, sys
+print(bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt(10)).decode())
+" "$password"
+    return
+  fi
+  # Last resort: temporary venv (avoids PEP 668 externally-managed-environment error)
+  log "Creating temporary Python venv to install bcrypt…"
+  local venv
+  venv=$(mktemp -d)
+  python3 -m venv "$venv" >/dev/null
+  "$venv/bin/pip" install --quiet bcrypt
+  "$venv/bin/python" -c "
+import bcrypt, sys
+print(bcrypt.hashpw(sys.argv[1].encode(), bcrypt.gensalt(10)).decode())
+" "$password"
+  rm -rf "$venv"
+}
 
-  MASTERKEY=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)
-  DB_PASS=$(openssl rand -base64 24 | tr -d '/+=' | head -c 24)
+# ── 1. Generate Dex config ────────────────────────────────────────────────────
+step "OIDC configuration"
+if [[ -f "$DEX_CONFIG" ]]; then
+  log "Found existing $DEX_CONFIG — skipping generation."
+else
+  command -v python3 >/dev/null || err "python3 is required."
 
   echo ""
   echo "   Admin account will be: admin@flexboard.localhost"
-  echo "   Password requirements: min 8 chars, uppercase, lowercase, digit, and symbol."
+  echo "   Password requirements: min 8 characters."
   read -rsp "   Choose admin password: " ADMIN_PASS; echo ""
   [[ ${#ADMIN_PASS} -ge 8 ]] || err "Password must be at least 8 characters."
-  [[ "$ADMIN_PASS" =~ [A-Z] ]] || err "Password must contain at least one uppercase letter."
-  [[ "$ADMIN_PASS" =~ [a-z] ]] || err "Password must contain at least one lowercase letter."
-  [[ "$ADMIN_PASS" =~ [0-9] ]] || err "Password must contain at least one digit."
-  [[ "$ADMIN_PASS" =~ [^a-zA-Z0-9] ]] || err "Password must contain at least one symbol (e.g. ! @ # \$)."
 
-  cat > "$ENV_FILE" <<EOF
-ZITADEL_MASTERKEY=$MASTERKEY
-ZITADEL_ADMIN_PASSWORD=$ADMIN_PASS
-ZITADEL_DB_PASSWORD=$DB_PASS
-VITE_ZITADEL_DOMAIN=http://localhost
-# Written automatically by this script after Zitadel is configured:
-ZITADEL_PROJECT_ID=
-VITE_ZITADEL_CLIENT_ID=
+  log "Hashing password…"
+  HASH=$(_bcrypt_hash "$ADMIN_PASS")
+
+  mkdir -p config
+  cat > "$DEX_CONFIG" <<EOF
+issuer: http://localhost/dex
+
+storage:
+  type: memory
+
+web:
+  http: 0.0.0.0:5556
+
+oauth2:
+  skipApprovalScreen: true
+
+staticClients:
+  - id: flexboard-web
+    name: Flexboard Web
+    redirectURIs:
+      - http://localhost/auth/callback
+    public: true
+
+enablePasswordDB: true
+
+staticPasswords:
+  - email: admin@flexboard.localhost
+    hash: "$HASH"
+    username: admin
+    userID: "admin-000001"
 EOF
-  log "Created $ENV_FILE"
+  log "Created $DEX_CONFIG"
 fi
 
-# Load current values so we can check if IDs are already present
-set -a; source "$ENV_FILE"; set +a
-
-# ── 2. Start infrastructure ───────────────────────────────────────────────────
-step "Starting infrastructure"
-mkdir -p machinekey
-docker compose up -d zitadel-db mongodb zitadel
-
-log "Waiting for Zitadel to become healthy (up to 120 s)…"
-DEADLINE=$(( $(date +%s) + 120 ))
-until docker compose ps zitadel 2>/dev/null | grep -q "(healthy)"; do
-  sleep 3
-  (( $(date +%s) < DEADLINE )) || err "Zitadel did not become healthy within 120 s."
-done
-log "Zitadel is ready."
-
-# ── 3. Ensure PAT file exists ─────────────────────────────────────────────────
-# Zitadel prints the PAT token as a plain line to stdout during first-time setup.
-# If ZITADEL_FIRSTINSTANCE_MACHINEKEYPATH didn't write it (timing/permissions),
-# we extract it from the container logs and write the file ourselves.
-if [[ ! -f "$PAT_FILE" ]]; then
-  step "Extracting PAT token from Zitadel startup logs"
-  # Disable pipefail temporarily: docker compose logs may return non-zero when the
-  # container has never been attached to a TTY, which is not an error here.
-  set +o pipefail
-  PAT_TOKEN=$(docker compose logs zitadel 2>/dev/null | python3 -c "
-import sys, re
-# The PAT is printed as a bare line (no surrounding JSON) between 'setup started'
-# and 'setup completed'. Strip the 'service  | ' Docker Compose prefix, then look
-# for a line whose entire content is a 60+ character alphanumeric/dash/underscore
-# token (no spaces, no '=', no ':').
-for line in sys.stdin:
-    content = re.sub(r'^[^|]+\|\s*', '', line.rstrip())
-    if re.fullmatch(r'[A-Za-z0-9_-]{60,}', content):
-        print(content)
-        break
-")
-  set -o pipefail
-  [[ -n "$PAT_TOKEN" ]] || err "Could not find PAT token in Zitadel logs. Check: docker compose logs zitadel"
-  echo "PAT=$PAT_TOKEN" > "$PAT_FILE"
-  log "Written to $PAT_FILE"
-fi
-
-# ── 4. Configure Zitadel (idempotent) ─────────────────────────────────────────
-if [[ -n "${ZITADEL_PROJECT_ID:-}" && -n "${VITE_ZITADEL_CLIENT_ID:-}" ]]; then
-  step "Zitadel already configured (project ${ZITADEL_PROJECT_ID}) — skipping."
-else
-  step "Configuring Zitadel"
-  ZITADEL_URL="$ZITADEL_URL" PAT_FILE="$PAT_FILE" bash scripts/setup-zitadel.sh
-fi
-
-# ── 5. Build and start the full stack ─────────────────────────────────────────
+# ── 2. Build and start all services ──────────────────────────────────────────
 step "Building and starting all services"
 docker compose up -d --build
+
+log "Waiting for Dex to become healthy (up to 60 s)…"
+DEADLINE=$(( $(date +%s) + 60 ))
+until docker compose ps dex 2>/dev/null | grep -q "(healthy)"; do
+  sleep 2
+  (( $(date +%s) < DEADLINE )) || err "Dex did not become healthy within 60 s."
+done
+log "All services ready."
 
 echo ""
 echo "  +-----------------------------------------+"

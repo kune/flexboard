@@ -2,7 +2,7 @@
 
 A self-hosted Kanban board application with real-time updates, OIDC authentication, and schema-driven card types.
 
-**Tech stack:** React 19 · Fastify 5 · MongoDB · Zitadel (OIDC) · nginx · Docker Compose
+**Tech stack:** React 19 · Fastify 5 · MongoDB · Dex (OIDC) · nginx · Docker Compose
 
 ---
 
@@ -13,13 +13,13 @@ A self-hosted Kanban board application with real-time updates, OIDC authenticati
 - Markdown rendering for descriptions and rich-text fields
 - Real-time updates via Server-Sent Events (SSE)
 - Comments and activity log per card
-- OIDC authentication via self-hosted Zitadel
+- OIDC authentication via self-hosted [Dex](https://dexidp.io/)
 
 ---
 
 ## Quick start
 
-**Prerequisites:** Docker with Docker Compose v2, `openssl`, Python 3
+**Prerequisites:** Docker with Docker Compose v2, Python 3
 
 ```bash
 git clone <repo-url> flexboard
@@ -28,11 +28,9 @@ bash scripts/init.sh
 ```
 
 The script will:
-1. Generate a `.env` with random secrets (you choose the admin password)
-2. Start Zitadel and wait for it to be healthy
-3. Create the OIDC project and application in Zitadel
-4. Write the resulting IDs back into `.env`
-5. Build and start the full stack
+1. Prompt for an admin password and generate `config/dex.yaml` (bcrypt-hashed)
+2. Build and start all services
+3. Wait until everything is healthy
 
 Once complete, open **http://localhost** and sign in with `admin@flexboard.localhost`.
 
@@ -40,47 +38,25 @@ Once complete, open **http://localhost** and sign in with `admin@flexboard.local
 
 ## Re-running init
 
-`init.sh` is safe to re-run. It skips any step that is already complete:
-
-- If `.env` already exists, no secrets are regenerated.
-- If Zitadel already has the project/client configured, the setup step is skipped.
-- `docker compose up -d --build` is always run at the end to apply any image changes.
+`init.sh` is safe to re-run. If `config/dex.yaml` already exists, the password step is skipped and `docker compose up -d --build` is run to apply any image changes.
 
 ---
 
 ## Manual setup (reference)
 
-If you prefer to run the steps yourself:
-
-### 1. Create `.env`
+### 1. Create Dex config
 
 ```bash
-cp .env.example .env
+cp config/dex.yaml.example config/dex.yaml
 ```
 
-Fill in the required values. Generate the masterkey with:
+Replace the `hash` value with a real bcrypt hash:
 
 ```bash
-openssl rand -base64 32 | tr -d '/+=' | head -c 32
+python3 -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt(10)).decode())"
 ```
 
-### 2. Start infrastructure
-
-```bash
-mkdir -p machinekey
-docker compose up -d zitadel-db mongodb zitadel
-# Wait until: docker compose ps shows zitadel as (healthy)
-```
-
-### 3. Configure Zitadel
-
-```bash
-bash scripts/setup-zitadel.sh
-```
-
-The script writes `ZITADEL_PROJECT_ID` and `VITE_ZITADEL_CLIENT_ID` directly into `.env`.
-
-### 4. Build and start
+### 2. Build and start
 
 ```bash
 docker compose up -d --build
@@ -90,14 +66,12 @@ docker compose up -d --build
 
 ## Environment variables
 
-| Variable | Set by | Description |
-|----------|--------|-------------|
-| `ZITADEL_MASTERKEY` | You | 32-character encryption key for Zitadel |
-| `ZITADEL_ADMIN_PASSWORD` | You | Password for `admin@flexboard.localhost` (min 8 chars, upper + lower + digit + symbol) |
-| `ZITADEL_DB_PASSWORD` | You | Password for Zitadel's PostgreSQL database |
-| `VITE_ZITADEL_DOMAIN` | You | Public URL of Zitadel (`http://localhost` locally) |
-| `ZITADEL_PROJECT_ID` | `init.sh` | Zitadel project ID |
-| `VITE_ZITADEL_CLIENT_ID` | `init.sh` | OIDC client ID for the SPA |
+No environment variables are required. The following optional overrides can be set in a `.env` file:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FRONTEND_PORT` | `80` | Host port for the nginx frontend |
+| `DEX_PORT` | `5556` | Host port for the Dex OIDC provider |
 
 ---
 
@@ -113,7 +87,7 @@ Run only the infrastructure in Docker; the frontend and backend run locally with
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
-Exposed ports: nginx :80, MongoDB :27017, Zitadel :8080, PostgreSQL :5432
+Exposed ports: nginx :80, MongoDB :27017, Dex :5556
 
 ### 2. Install dependencies
 
@@ -126,15 +100,15 @@ pnpm install
 `apps/backend/.env.local`:
 ```dotenv
 MONGODB_URI=mongodb://localhost:27017/flexboard
-ZITADEL_DOMAIN=http://localhost
-ZITADEL_PROJECT_ID=<from your .env>
+DEX_ISSUER=http://localhost/dex
+DEX_JWKS_URL=http://localhost:5556/dex/keys
 PORT=3001
 ```
 
 `apps/frontend/.env.local`:
 ```dotenv
-VITE_ZITADEL_CLIENT_ID=<from your .env>
-VITE_ZITADEL_DOMAIN=http://localhost
+VITE_OIDC_AUTHORITY=http://localhost/dex
+VITE_OIDC_CLIENT_ID=flexboard-web
 ```
 
 ### 4. Start the apps
@@ -158,8 +132,7 @@ Browser
   └─► nginx (:80)
         ├─► /api/*  ──► backend (Fastify, :3001)
         │                 └─► MongoDB
-        ├─► /auth/* ──► Zitadel (:8080)
-        │   /oidc/*        └─► PostgreSQL
+        ├─► /dex/*  ──► Dex (:5556)
         └─► /*      ──► frontend (nginx SPA)
 ```
 
@@ -168,8 +141,7 @@ Browser
 | `frontend` | custom (nginx + SPA) | Serves the React application |
 | `backend` | custom (Node.js) | REST API + SSE broker |
 | `mongo` | `mongo:7` | Application database |
-| `zitadel` | `ghcr.io/zitadel/zitadel` | OIDC identity provider |
-| `postgres` | `postgres:16` | Zitadel's database |
+| `dex` | `ghcr.io/dexidp/dex` | OIDC identity provider |
 
 ---
 
@@ -185,6 +157,6 @@ docker compose restart backend
 # Stop everything
 docker compose down
 
-# Full reset (removes all data)
-docker compose down -v && rm -f .env machinekey/sa.pat
+# Full reset (removes all data and regenerates config on next init)
+docker compose down -v && rm -f config/dex.yaml
 ```

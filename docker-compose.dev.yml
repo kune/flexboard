@@ -6,7 +6,7 @@ name: flexboard
 services:
 
   # In development, frontend and backend run via pnpm dev (hot reload).
-  # Only infrastructure services (MongoDB, Zitadel) run in Docker.
+  # Only infrastructure services (MongoDB, Dex) run in Docker.
 
   frontend:
     # Disable in dev — run with: pnpm --filter @flexboard/frontend dev
@@ -20,10 +20,6 @@ services:
     ports:
       - "27017:27017"  # expose for local tooling (Compass, mongosh)
 
-  zitadel:
+  dex:
     ports:
-      - "8080:8080"
-
-  zitadel-db:
-    ports:
-      - "5432:5432"  # expose for local inspection
+      - "5556:5556"  # expose for local inspection

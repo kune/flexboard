@@ -1,9 +1,0 @@
-ExternalPort: 80
-ExternalDomain: localhost
-ExternalSecure: false
-TLSMode: disabled
-
-TLS:
-  Enabled: false
-  KeyPath: ""
-  CertPath: ""

@@ -1,15 +1,12 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose'
 import type { FastifyRequest, FastifyReply } from 'fastify'
 
-// Internal URL for JWKS fetching (container-to-container, bypasses nginx)
-const ZITADEL_DOMAIN = process.env.ZITADEL_DOMAIN ?? 'http://localhost:8080'
-// Issuer as seen in JWT tokens (matches ZITADEL_EXTERNALDOMAIN:EXTERNALPORT)
-const ZITADEL_ISSUER = process.env.ZITADEL_ISSUER ?? ZITADEL_DOMAIN
-const PROJECT_ID = process.env.ZITADEL_PROJECT_ID
+// Issuer as seen in JWT tokens (must match `issuer` in config/dex.yaml)
+const DEX_ISSUER = process.env.DEX_ISSUER ?? 'http://localhost/dex'
+// Internal URL for JWKS — container-to-container, bypasses nginx
+const DEX_JWKS_URL = process.env.DEX_JWKS_URL ?? 'http://dex:5556/dex/keys'
 
-const JWKS = createRemoteJWKSet(
-  new URL(`${ZITADEL_DOMAIN}/oauth/v2/keys`),
-)
+const JWKS = createRemoteJWKSet(new URL(DEX_JWKS_URL))
 
 export interface AuthPayload extends JWTPayload {
   email?: string
@@ -19,8 +16,7 @@ export interface AuthPayload extends JWTPayload {
 export async function verifyToken(token: string): Promise<AuthPayload | null> {
   try {
     const { payload } = await jwtVerify<AuthPayload>(token, JWKS, {
-      issuer: ZITADEL_ISSUER,
-      ...(PROJECT_ID ? { audience: PROJECT_ID } : {}),
+      issuer: DEX_ISSUER,
     })
     return payload
   } catch {
@@ -42,8 +38,7 @@ export async function requireAuth(
 
   try {
     const { payload } = await jwtVerify<AuthPayload>(token, JWKS, {
-      issuer: ZITADEL_ISSUER,
-      ...(PROJECT_ID ? { audience: PROJECT_ID } : {}),
+      issuer: DEX_ISSUER,
     })
     ;(request as FastifyRequest & { user: AuthPayload }).user = payload
   } catch (err) {

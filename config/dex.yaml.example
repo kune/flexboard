@@ -1,0 +1,26 @@
+issuer: http://localhost/dex
+
+storage:
+  type: memory
+
+web:
+  http: 0.0.0.0:5556
+
+oauth2:
+  skipApprovalScreen: true
+
+staticClients:
+  - id: flexboard-web
+    name: Flexboard Web
+    redirectURIs:
+      - http://localhost/auth/callback
+    public: true
+
+enablePasswordDB: true
+
+staticPasswords:
+  - email: admin@flexboard.localhost
+    # Generate with: python3 -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt(10)).decode())"
+    hash: "$2a$10$examplehashreplacethiswithreal"
+    username: admin
+    userID: "admin-000001"
