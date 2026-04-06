@@ -266,7 +266,7 @@ export default function Board() {
   // Track the column the card started in — handleDragOver mutates localCards before
   // handleDragEnd runs, so we can't read movedCard.columnId there to detect cross-column moves.
   const dragSourceColId = useRef<string | null>(null)
-  const setBoardName = useUiStore((s) => s.setBoardName)
+  const setBoardCrumb = useUiStore((s) => s.setBoardCrumb)
   const qc = useQueryClient()
 
   const { data: board } = useQuery({
@@ -288,9 +288,9 @@ export default function Board() {
   })
 
   useEffect(() => {
-    setBoardName(board?.name ?? null)
-    return () => setBoardName(null)
-  }, [board?.name, setBoardName])
+    setBoardCrumb(boardId ?? null, board?.name ?? null)
+    return () => setBoardCrumb(null, null)
+  }, [boardId, board?.name, setBoardCrumb])
 
   useBoardSSE(boardId)
 

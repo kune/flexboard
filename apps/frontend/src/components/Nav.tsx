@@ -10,7 +10,9 @@ interface NavProps {
 
 export default function Nav({ user }: NavProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const boardId = useUiStore((s) => s.boardId)
   const boardName = useUiStore((s) => s.boardName)
+  const cardTitle = useUiStore((s) => s.cardTitle)
 
   const initials = (() => {
     // Full name → two initials; otherwise use the local part of preferred_username / email / sub
@@ -39,7 +41,15 @@ export default function Nav({ user }: NavProps) {
           <span className="nav-crumb-sep">/</span>
           <Link to="/" className="nav-crumb a">Boards</Link>
           <span className="nav-crumb-sep">/</span>
-          <span className="nav-crumb-current">{boardName}</span>
+          {cardTitle ? (
+            <>
+              <Link to={`/boards/${boardId}`} className="nav-crumb a">{boardName}</Link>
+              <span className="nav-crumb-sep">/</span>
+              <span className="nav-crumb-current">{cardTitle}</span>
+            </>
+          ) : (
+            <span className="nav-crumb-current">{boardName}</span>
+          )}
         </div>
       )}
 

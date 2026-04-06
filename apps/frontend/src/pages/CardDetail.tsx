@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
 import type { AttributeFieldSchema } from '@flexboard/shared'
 import {
-  getCard, updateCard, deleteCard, getColumns, getCardTypes,
+  getBoard, getCard, updateCard, deleteCard, getColumns, getCardTypes,
   getComments, createComment, updateComment, deleteComment,
   getActivity,
 } from '@/lib/api'
@@ -216,12 +216,19 @@ export default function CardDetail() {
   const { id: boardId, cardId } = useParams<{ id: string; cardId: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const setBoardName = useUiStore((s) => s.setBoardName)
+  const setBoardCrumb = useUiStore((s) => s.setBoardCrumb)
+  const setCardTitle = useUiStore((s) => s.setCardTitle)
 
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editAttrs, setEditAttrs] = useState<Record<string, unknown>>({})
+
+  const { data: board } = useQuery({
+    queryKey: ['board', boardId],
+    queryFn: () => getBoard(boardId!),
+    enabled: !!boardId,
+  })
 
   const { data: card, isLoading } = useQuery({
     queryKey: ['card', boardId, cardId],
@@ -252,6 +259,16 @@ export default function CardDetail() {
 
   const typeSchema = cardTypes?.find((ct) => ct.type === card?.type)
   const schemaFields: AttributeFieldSchema[] = typeSchema?.attributes ?? []
+
+  useEffect(() => {
+    setBoardCrumb(boardId ?? null, board?.name ?? null)
+    return () => setBoardCrumb(null, null)
+  }, [boardId, board?.name, setBoardCrumb])
+
+  useEffect(() => {
+    setCardTitle(card?.title ?? null)
+    return () => setCardTitle(null)
+  }, [card?.title, setCardTitle])
 
   useEffect(() => {
     if (card) {

@@ -85,9 +85,9 @@ function NewBoardModal({ onClose }: { onClose: () => void }) {
 
 export default function Dashboard() {
   const [showNewBoard, setShowNewBoard] = useState(false)
-  const setBoardName = useUiStore((s) => s.setBoardName)
+  const setBoardCrumb = useUiStore((s) => s.setBoardCrumb)
 
-  useEffect(() => { setBoardName(null) }, [setBoardName])
+  useEffect(() => { setBoardCrumb(null, null) }, [setBoardCrumb])
 
   const { data: boards, isLoading, error } = useQuery({
     queryKey: ['boards'],
