@@ -1,5 +1,5 @@
 import type { Board, Column, Card, CardTypeSchema, Comment, ActivityEntry } from '@flexboard/shared'
-import { getAccessToken } from './auth'
+import { getAccessToken, signOut } from './auth'
 
 const BASE = '/api/v1'
 
@@ -13,6 +13,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       ...init.headers,
     },
   })
+  if (res.status === 401) {
+    // Token is invalid or expired (e.g. after an app reset). Clear the local
+    // session and redirect to root — AuthGate will trigger a fresh login.
+    await signOut()
+    return undefined as T // unreachable: signOut redirects
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`)

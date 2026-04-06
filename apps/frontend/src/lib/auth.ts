@@ -21,8 +21,12 @@ export function signInCallback(): Promise<User> {
   return userManager.signinRedirectCallback()
 }
 
-export function signOut(): Promise<void> {
-  return userManager.signoutRedirect()
+export async function signOut(): Promise<void> {
+  // Dex does not implement RP-initiated logout (no end_session_endpoint),
+  // so we clear the local session and redirect to root, which will trigger
+  // a fresh login redirect via AuthGate.
+  await userManager.removeUser()
+  window.location.href = '/'
 }
 
 export function getUser(): Promise<User | null> {
