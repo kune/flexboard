@@ -136,12 +136,28 @@ else
 fi
 
 # ------------------------------------------------------------------
-# 5. Output
+# 5. Write IDs into .env (if present) and print
 # ------------------------------------------------------------------
-echo ""
-echo "========================================"
-echo "Add these lines to your .env:"
-echo "========================================"
-echo "ZITADEL_PROJECT_ID=$PROJECT_ID"
-echo "VITE_ZITADEL_CLIENT_ID=$CLIENT_ID"
-echo "========================================"
+ENV_FILE="${ENV_FILE:-.env}"
+if [[ -f "$ENV_FILE" ]]; then
+  python3 - "$ENV_FILE" "$PROJECT_ID" "$CLIENT_ID" <<'PYEOF'
+import sys, re, pathlib
+f = pathlib.Path(sys.argv[1])
+txt = f.read_text()
+txt = re.sub(r'^ZITADEL_PROJECT_ID=.*',     f'ZITADEL_PROJECT_ID={sys.argv[2]}',     txt, flags=re.MULTILINE)
+txt = re.sub(r'^VITE_ZITADEL_CLIENT_ID=.*', f'VITE_ZITADEL_CLIENT_ID={sys.argv[3]}', txt, flags=re.MULTILINE)
+f.write_text(txt)
+PYEOF
+  echo ""
+  echo "  Updated $ENV_FILE:"
+  echo "    ZITADEL_PROJECT_ID=$PROJECT_ID"
+  echo "    VITE_ZITADEL_CLIENT_ID=$CLIENT_ID"
+else
+  echo ""
+  echo "========================================"
+  echo "Add these lines to your .env:"
+  echo "========================================"
+  echo "ZITADEL_PROJECT_ID=$PROJECT_ID"
+  echo "VITE_ZITADEL_CLIENT_ID=$CLIENT_ID"
+  echo "========================================"
+fi

@@ -17,146 +17,113 @@ A self-hosted Kanban board application with real-time updates, OIDC authenticati
 
 ---
 
-## Prerequisites
+## Quick start
 
-| Tool | Version |
-|------|---------|
-| Docker + Docker Compose | v2.x |
-| pnpm | v9+ |
-| Node.js | v22+ |
-| Python 3 | 3.x (for setup script) |
-
----
-
-## First-time setup
-
-### 1. Clone and install dependencies
+**Prerequisites:** Docker with Docker Compose v2, `openssl`, Python 3
 
 ```bash
 git clone <repo-url> flexboard
 cd flexboard
-pnpm install
+bash scripts/init.sh
 ```
 
-### 2. Create the environment file
+The script will:
+1. Generate a `.env` with random secrets (you choose the admin password)
+2. Start Zitadel and wait for it to be healthy
+3. Create the OIDC project and application in Zitadel
+4. Write the resulting IDs back into `.env`
+5. Build and start the full stack
 
-Copy the template and fill in the required values:
+Once complete, open **http://localhost** and sign in with `admin@flexboard.localhost`.
+
+---
+
+## Re-running init
+
+`init.sh` is safe to re-run. It skips any step that is already complete:
+
+- If `.env` already exists, no secrets are regenerated.
+- If Zitadel already has the project/client configured, the setup step is skipped.
+- `docker compose up -d --build` is always run at the end to apply any image changes.
+
+---
+
+## Manual setup (reference)
+
+If you prefer to run the steps yourself:
+
+### 1. Create `.env`
 
 ```bash
 cp .env.example .env
 ```
 
-Generate a 32-byte master key for Zitadel (must be exactly 32 characters):
+Fill in the required values. Generate the masterkey with:
 
 ```bash
-openssl rand -base64 24 | tr -d '=' | head -c 32
+openssl rand -base64 32 | tr -d '/+=' | head -c 32
 ```
 
-Set passwords and the master key in `.env`:
-
-```dotenv
-ZITADEL_MASTERKEY=<32-character random string>
-ZITADEL_DB_PASSWORD=<strong password>
-ZITADEL_ADMIN_PASSWORD=<strong password>
-```
-
-Leave `ZITADEL_PROJECT_ID` and `VITE_ZITADEL_CLIENT_ID` blank for now — the setup script will provide them.
-
-### 3. Start the infrastructure
-
-Start all containers (Zitadel needs a few seconds to initialise on first run):
+### 2. Start infrastructure
 
 ```bash
-docker compose up -d
+mkdir -p machinekey
+docker compose up -d zitadel-db mongodb zitadel
+# Wait until: docker compose ps shows zitadel as (healthy)
 ```
 
-Wait until Zitadel is healthy:
-
-```bash
-docker compose ps
-# zitadel should show "healthy"
-```
-
-### 4. Run the Zitadel setup script
-
-This script creates the Flexboard project and OIDC application in Zitadel and prints the IDs you need:
+### 3. Configure Zitadel
 
 ```bash
 bash scripts/setup-zitadel.sh
 ```
 
-The script outputs two values:
+The script writes `ZITADEL_PROJECT_ID` and `VITE_ZITADEL_CLIENT_ID` directly into `.env`.
 
-```
-ZITADEL_PROJECT_ID=<id>
-VITE_ZITADEL_CLIENT_ID=<client-id>
-```
-
-Copy these into your `.env` file. Also set `VITE_ZITADEL_DOMAIN`:
-
-```dotenv
-ZITADEL_PROJECT_ID=<id>
-VITE_ZITADEL_CLIENT_ID=<client-id>
-VITE_ZITADEL_DOMAIN=http://localhost
-```
-
-### 5. Rebuild and restart
-
-The frontend build embeds the Zitadel client ID at build time, so a rebuild is required:
+### 4. Build and start
 
 ```bash
 docker compose up -d --build
 ```
 
-### 6. Open the app
-
-Navigate to [http://localhost](http://localhost) in your browser.
-
-Sign in with the default Zitadel admin account:
-
-| Field | Value |
-|-------|-------|
-| Username | `admin@flexboard.localhost` |
-| Password | value of `ZITADEL_ADMIN_PASSWORD` in your `.env` |
-
 ---
 
-## Environment variables reference
+## Environment variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ZITADEL_MASTERKEY` | Yes | 32-character encryption key for Zitadel |
-| `ZITADEL_DB_PASSWORD` | Yes | Password for the Zitadel PostgreSQL database |
-| `ZITADEL_ADMIN_PASSWORD` | Yes | Password for the initial `admin@flexboard.localhost` account |
-| `ZITADEL_PROJECT_ID` | Yes (after setup) | Zitadel project ID (output of setup script) |
-| `VITE_ZITADEL_CLIENT_ID` | Yes (after setup) | OIDC client ID for the SPA (output of setup script) |
-| `VITE_ZITADEL_DOMAIN` | Yes | Public URL of Zitadel — `http://localhost` for local development |
+| Variable | Set by | Description |
+|----------|--------|-------------|
+| `ZITADEL_MASTERKEY` | You | 32-character encryption key for Zitadel |
+| `ZITADEL_ADMIN_PASSWORD` | You | Password for `admin@flexboard.localhost` |
+| `ZITADEL_DB_PASSWORD` | You | Password for Zitadel's PostgreSQL database |
+| `VITE_ZITADEL_DOMAIN` | You | Public URL of Zitadel (`http://localhost` locally) |
+| `ZITADEL_PROJECT_ID` | `init.sh` | Zitadel project ID |
+| `VITE_ZITADEL_CLIENT_ID` | `init.sh` | OIDC client ID for the SPA |
 
 ---
 
 ## Development mode
 
-In development mode the frontend and backend run locally (with hot reload) while only the infrastructure services (MongoDB, PostgreSQL, Zitadel, nginx) run in Docker.
+Run only the infrastructure in Docker; the frontend and backend run locally with hot reload.
 
-### 1. Start infrastructure only
+**Prerequisites (dev only):** Node.js v22+, pnpm v9+
+
+### 1. Start infrastructure
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
-This exposes the following ports on localhost:
+Exposed ports: nginx :80, MongoDB :27017, Zitadel :8080, PostgreSQL :5432
 
-| Service | Port |
-|---------|------|
-| nginx (app entry point) | 80 |
-| MongoDB | 27017 |
-| Zitadel | 8080 |
-| PostgreSQL | 5432 |
+### 2. Install dependencies
 
-### 2. Configure local environment
+```bash
+pnpm install
+```
 
-Create `apps/backend/.env.local` (or export these in your shell):
+### 3. Configure local environment
 
+`apps/backend/.env.local`:
 ```dotenv
 MONGODB_URI=mongodb://localhost:27017/flexboard
 ZITADEL_DOMAIN=http://localhost
@@ -164,48 +131,44 @@ ZITADEL_PROJECT_ID=<from your .env>
 PORT=3001
 ```
 
-Create `apps/frontend/.env.local`:
-
+`apps/frontend/.env.local`:
 ```dotenv
 VITE_ZITADEL_CLIENT_ID=<from your .env>
 VITE_ZITADEL_DOMAIN=http://localhost
-VITE_API_URL=http://localhost/api
 ```
 
-### 3. Start the apps
-
-In separate terminals:
+### 4. Start the apps
 
 ```bash
-# Backend (http://localhost:3001)
+# Backend
 pnpm --filter @flexboard/backend dev
 
-# Frontend (http://localhost:5173)
+# Frontend (separate terminal)
 pnpm --filter @flexboard/frontend dev
 ```
 
-Access the app at [http://localhost](http://localhost) (nginx proxies both).
+Access at **http://localhost** (proxied by nginx).
 
 ---
 
-## Architecture overview
+## Architecture
 
 ```
 Browser
   └─► nginx (:80)
         ├─► /api/*  ──► backend (Fastify, :3001)
-        │                 └─► MongoDB (:27017)
+        │                 └─► MongoDB
         ├─► /auth/* ──► Zitadel (:8080)
-        │   /zitadel/*     └─► PostgreSQL (:5432)
-        └─► /*      ──► frontend (nginx static SPA)
+        │   /oidc/*        └─► PostgreSQL
+        └─► /*      ──► frontend (nginx SPA)
 ```
 
 | Container | Image | Role |
 |-----------|-------|------|
-| `frontend` | custom (nginx + built SPA) | Serves the React SPA |
+| `frontend` | custom (nginx + SPA) | Serves the React application |
 | `backend` | custom (Node.js) | REST API + SSE broker |
 | `mongo` | `mongo:7` | Application database |
-| `zitadel` | `ghcr.io/zitadel/zitadel:v2.x` | OIDC identity provider |
+| `zitadel` | `ghcr.io/zitadel/zitadel` | OIDC identity provider |
 | `postgres` | `postgres:16` | Zitadel's database |
 
 ---
@@ -213,11 +176,8 @@ Browser
 ## Useful commands
 
 ```bash
-# View logs for all services
+# View logs
 docker compose logs -f
-
-# View backend logs only
-docker compose logs -f backend
 
 # Restart a single service
 docker compose restart backend
@@ -225,16 +185,6 @@ docker compose restart backend
 # Stop everything
 docker compose down
 
-# Stop and remove volumes (full reset)
-docker compose down -v
-```
-
----
-
-## Re-running the setup script
-
-The setup script is idempotent — it is safe to run multiple times. It will reuse an existing project/application if one already exists with the same name, and will always print the correct IDs.
-
-```bash
-bash scripts/setup-zitadel.sh
+# Full reset (removes all data)
+docker compose down -v && rm -f .env machinekey/sa.pat
 ```
