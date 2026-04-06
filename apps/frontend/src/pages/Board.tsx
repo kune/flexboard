@@ -74,6 +74,7 @@ function KCard({ card, boardId, onDelete }: KCardProps) {
         <button
           className="btn btn-ghost btn-sm"
           style={{ padding: '2px 4px', fontSize: 12, color: '#94a3b8' }}
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); onDelete(card.id) }}
           title="Delete card"
         >

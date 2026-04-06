@@ -13,13 +13,19 @@ export default function Nav({ user }: NavProps) {
   const boardName = useUiStore((s) => s.boardName)
 
   const initials = (() => {
-    const name = user.profile.name ?? user.profile.email ?? user.profile.sub
-    const parts = name.split(/\s+/)
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-    return name.slice(0, 2).toUpperCase()
+    // Full name → two initials; otherwise use the local part of preferred_username / email / sub
+    if (user.profile.name) {
+      const parts = user.profile.name.split(/\s+/)
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+      return user.profile.name.slice(0, 2).toUpperCase()
+    }
+    const nick = user.profile.preferred_username ?? user.profile.email ?? user.profile.sub
+    const local = nick.includes('@') ? nick.split('@')[0] : nick
+    return local.slice(0, 2).toUpperCase()
   })()
 
-  const displayEmail = user.profile.email ?? user.profile.sub
+  const displayName = user.profile.name ?? user.profile.preferred_username ?? user.profile.email ?? user.profile.sub
+  const displayEmail = user.profile.email ?? user.profile.preferred_username ?? user.profile.sub
 
   return (
     <nav className="nav">
@@ -56,7 +62,7 @@ export default function Nav({ user }: NavProps) {
             />
             <div className="nav-dropdown">
               <div className="nav-dropdown-header">
-                <div className="nav-dropdown-name">{user.profile.name ?? 'User'}</div>
+                <div className="nav-dropdown-name">{displayName}</div>
                 <div className="nav-dropdown-email">{displayEmail}</div>
               </div>
               <button

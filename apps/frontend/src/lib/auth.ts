@@ -11,8 +11,9 @@ export const userManager = new UserManager({
   response_type: 'code',
   scope: 'openid profile email',
   userStore: new WebStorageStateStore({ store: window.localStorage }),
-  // Zitadel returns the issuer as http://localhost:8080 — we must match it exactly.
-  // metadata_url is derived automatically from authority + /.well-known/openid-configuration
+  // Fetch userinfo endpoint after signin so profile claims (preferred_username, name, …)
+  // are available — Zitadel does not embed them in the ID token by default.
+  loadUserInfo: true,
 })
 
 export function signIn(): Promise<void> {

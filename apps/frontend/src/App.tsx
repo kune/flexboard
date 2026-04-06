@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { type User } from 'oidc-client-ts'
-import { getUser, signIn } from '@/lib/auth'
+import { getUser, signIn, userManager } from '@/lib/auth'
 import AuthCallback from '@/pages/AuthCallback'
 import Nav from '@/components/Nav'
 import Dashboard from '@/pages/Dashboard'
@@ -13,7 +13,23 @@ function AuthGate() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    getUser().then(setUser)
+    getUser().then(async (u) => {
+      if (u && !u.expired && !u.profile.preferred_username) {
+        // The stored session pre-dates loadUserInfo=true — fetch userinfo now and
+        // patch the profile so display name / initials resolve correctly.
+        try {
+          const res = await fetch('/oidc/v1/userinfo', {
+            headers: { Authorization: `Bearer ${u.access_token}` },
+          })
+          if (res.ok) {
+            const info = await res.json() as Record<string, unknown>
+            Object.assign(u.profile, info)
+            await userManager.storeUser(u)
+          }
+        } catch { /* non-fatal — display falls back gracefully */ }
+      }
+      setUser(u)
+    })
   }, [])
 
   useEffect(() => {
