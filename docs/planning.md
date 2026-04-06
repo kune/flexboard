@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-04 (Track A complete: SSE real-time updates)  
+> **Last updated:** 2026-04-06 (Dex migration complete; multi-user design decided)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -46,10 +46,10 @@
 | ✅ | Write `frontend.Dockerfile` (multi-stage) | Build → Nginx serving SPA |
 | ✅ | Write `docker-compose.yml` | All 5 containers; internal network |
 | ✅ | Write `docker-compose.dev.yml` | Dev overrides: infrastructure only, apps run locally |
-| ✅ | Configure Zitadel (initial setup) | `scripts/setup-zitadel.sh` — idempotent; creates OIDC app, grants IAM_OWNER; outputs IDs |
-| ✅ | Integrate Zitadel into frontend (OIDC client, login redirect) | `lib/auth.ts` — `oidc-client-ts`, PKCE, Login V1 |
-| ✅ | Validate JWT in backend (`jose` + Zitadel JWKS) | `lib/auth.ts` — `createRemoteJWKSet`; `requireAuth` preHandler on all routes |
-| ✅ | Verify full auth round-trip via `docker compose up` | Login → Zitadel Login V1 → `/auth/callback` → token → `/api/v1/me` ✓ |
+| ✅ | Configure OIDC provider | Originally Zitadel; replaced by **Dex** (static passwords, no external DB). `scripts/init.sh` generates `config/dex.yaml` with bcrypt-hashed admin password. |
+| ✅ | Integrate OIDC into frontend (OIDC client, login redirect) | `lib/auth.ts` — `oidc-client-ts`, PKCE. Authority: `http://localhost/dex`. |
+| ✅ | Validate JWT in backend (`jose` + Dex JWKS) | `lib/auth.ts` — `createRemoteJWKSet`; `requireAuth` preHandler on all routes. `DEX_ISSUER` / `DEX_JWKS_URL` env vars. |
+| ✅ | Verify full auth round-trip via `docker compose up` | Login → Dex → `/auth/callback` → token → `/api/v1/me` ✓ |
 
 ---
 
@@ -109,7 +109,13 @@
 
 | Status | Task | Notes |
 |--------|------|-------|
-| ⬜ | Board membership management | Invite users; assign roles (owner/editor/viewer) |
+| ⬜ | Board membership — data model | Add `members: [{ userId, role }]` to Board; migrate existing boards to owner = creator |
+| ⬜ | Board membership — backend enforcement | `requireAuth` + role check on every board/column/card route; `403` for insufficient role |
+| ⬜ | Board membership — invite API | `POST /api/v1/boards/:id/members` (owner only); look up user by email from Dex userinfo or existing JWT claims |
+| ⬜ | Board membership — manage API | `PATCH /api/v1/boards/:id/members/:userId` (change role); `DELETE` (remove member); guard against removing last owner |
+| ⬜ | Dashboard — "My Boards" / "Shared With Me" split | Filter boards by whether current user is owner vs editor/viewer |
+| ⬜ | Board settings panel | UI for owner to manage members: list current members with roles, invite by email, change role, remove |
+| ⬜ | User management (Dex config) | Document admin workflow for adding/removing users in `config/dex.yaml` |
 | ⬜ | Card linking | Link cards to each other; display in sidebar |
 | ⬜ | Acceptance criteria checklist rendering | Interactive checkboxes in card detail |
 | ⬜ | Full-text search with highlighted matches | `$text` index or Atlas Search |

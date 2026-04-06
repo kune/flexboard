@@ -1,9 +1,9 @@
 # Flexboard – Requirements Document
 
 > **Name:** Flexboard  
-> **Version:** 0.1 (Draft)  
-> **Date:** 2026-04-03  
-> **Status:** Decisions complete — ready for implementation planning
+> **Version:** 0.2  
+> **Date:** 2026-04-06  
+> **Status:** Updated — multi-user & role-based access decided
 
 ---
 
@@ -61,9 +61,30 @@ Flexboard is a web-based project management application inspired by Jira and Tre
 
 ### FR-04 – Users and Permissions
 
-- The system supports **user accounts** with authentication.
-- Boards can be assigned to one or more users; permissions (read, edit, manage) are configurable at the board level.
-- A more detailed role and permission model is optional and can be introduced at a later stage.
+#### User management
+
+- The system supports **user accounts** with authentication via OIDC (OpenID Connect).
+- The identity provider is **Dex** (self-hosted, runs as a Docker container). User accounts are defined as **static passwords** in `config/dex.yaml` and managed by the administrator.
+- Adding or removing a user requires editing `config/dex.yaml` and restarting the Dex container — no in-app registration UI is provided.
+- Passwords are stored as **bcrypt hashes** in `config/dex.yaml`; the plaintext password is never persisted.
+- A dedicated admin account (`admin@flexboard.localhost`) is created during initial setup via `scripts/init.sh`.
+
+#### Board-level role model
+
+Boards support **role-based access control** with three roles:
+
+| Role | Who | Capabilities |
+|------|-----|-------------|
+| `owner` | The user who created the board (or a promoted member) | Full CRUD on board settings, columns, and cards; invite/remove members; change member roles; delete the board |
+| `editor` | Invited collaborators with write access | Create, edit, move, and delete cards and columns; add and manage their own comments |
+| `viewer` | Invited collaborators with read-only access | View all board content and comments; cannot create, edit, or delete anything |
+
+- Every board has exactly one `owner` at creation time (the authenticated user who created it).
+- The `owner` can invite other users by their registered email address and assign them a role.
+- The `owner` can change the role of any member, including promoting another member to `owner`.
+- A board always has at least one `owner`; the last owner cannot be removed.
+- The dashboard distinguishes between **My Boards** (boards where the user is owner) and **Shared With Me** (boards where the user is editor or viewer).
+- All board data — columns, cards, comments, activity — is scoped to users with at least `viewer` access. Unauthenticated or unauthorised requests are rejected with `401`/`403`.
 
 ### FR-05 – Search and Filtering
 
@@ -473,8 +494,9 @@ Accessible from the board view toolbar. Filters apply immediately; results can s
 | 1 | Database choice      | ✅ **MongoDB** chosen.                                                              |
 | 2 | API paradigm         | ✅ **REST** chosen.                                                                 |
 | 3 | Frontend framework   | ✅ **React** (with TypeScript) chosen.                                              |
-| 4 | Authentication       | ✅ **OAuth 2.0 / OIDC via Zitadel** (self-hosted, Docker); backend validates JWT Access Tokens. |
+| 4 | Authentication       | ✅ **OAuth 2.0 / OIDC via Dex** (self-hosted, Docker); backend validates JWT Access Tokens. Static passwords managed in `config/dex.yaml`. |
 | 5 | Card type schema     | ✅ **Config file (YAML/JSON) as source of truth, seeded into MongoDB on startup**; Admin UI deferred to post-MVP. |
 | 6 | Internationalization | ✅ **react-i18next** from the start; English only for MVP, structured for additional locales. |
 | 7 | Real-time updates    | ✅ **Server-Sent Events (SSE)**; board and card changes pushed unidirectionally from backend to connected clients. |
 | 8 | Project name         | ✅ **Flexboard** confirmed as the final name.                                       |
+| 9 | Multi-user model     | ✅ **Dex static passwords + role-based board membership** (owner / editor / viewer). User management via `config/dex.yaml`; no in-app registration. |

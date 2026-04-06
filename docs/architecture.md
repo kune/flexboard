@@ -1,8 +1,8 @@
 # Flexboard – Architecture Document
 
-> **Version:** 0.4  
-> **Date:** 2026-04-04  
-> **Status:** Updated — reflects Phase 1–3 + Track A (SSE) + Track B (comments, activity, attributes)
+> **Version:** 0.5  
+> **Date:** 2026-04-06  
+> **Status:** Updated — Dex replaces Zitadel; multi-user role model specified
 
 ---
 
@@ -38,19 +38,16 @@ Flexboard is a self-hosted, containerized web application. The only external dep
                         │                                    │        │
                         │          OIDC redirect             │MongoDB │
                         │  ┌──────────────────────────┐     │queries │
-                        │  │  Zitadel (Identity       │     ▼        │
-                        │  │  Provider)               │  ┌────────┐  │
-                        │  │                          │  │MongoDB │  │
-                        │  │  ┌──────────────────┐   │  └────────┘  │
-                        │  │  │ PostgreSQL        │   │              │
-                        │  │  │ (Zitadel DB)      │   │              │
-                        │  └──┴──────────────────-┘   │              │
+                        │  │  Dex (Identity Provider) │     ▼        │
+                        │  │  static passwords        │  ┌────────┐  │
+                        │  │  memory storage          │  │MongoDB │  │
+                        │  └──────────────────────────┘  └────────┘  │
                         └─────────────────────────────────────────────┘
 ```
 
 **Actors:**
-- **User** – accesses the application via browser; authenticated through Zitadel.
-- **Admin** – same user role in the MVP; post-MVP a dedicated admin role is foreseen.
+- **User** – accesses the application via browser; authenticated through Dex.
+- **Admin** – manages users by editing `config/dex.yaml` and restarting the Dex container.
 
 **External systems:** none. All components are self-hosted.
 
@@ -58,36 +55,35 @@ Flexboard is a self-hosted, containerized web application. The only external dep
 
 ## 2. Container Architecture
 
-The Docker Compose stack consists of five containers:
+The Docker Compose stack consists of four containers:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  Docker Compose: flexboard                                       │
 │                                                                  │
 │  ┌─────────────┐   ┌─────────────┐   ┌────────────────────┐    │
-│  │  frontend   │   │   backend   │   │      zitadel       │    │
+│  │  frontend   │   │   backend   │   │       dex          │    │
 │  │             │   │             │   │                    │    │
 │  │  Nginx      │   │  Node.js    │   │  Identity Provider │    │
 │  │  serving    │──▶│  Fastify    │   │  (OAuth 2.0/OIDC)  │    │
-│  │  React SPA  │   │  REST API   │   └─────────┬──────────┘    │
-│  └─────────────┘   └──────┬──────┘             │               │
-│                           │                    │               │
-│                    ┌──────▼──────┐   ┌─────────▼──────────┐   │
-│                    │   mongodb   │   │   zitadel-db        │   │
-│                    │             │   │                     │   │
-│                    │  MongoDB    │   │  PostgreSQL         │   │
-│                    │  (app data) │   │  (Zitadel state)    │   │
-│                    └─────────────┘   └─────────────────────┘   │
+│  │  React SPA  │   │  REST API   │   │  static passwords  │    │
+│  └─────────────┘   └──────┬──────┘   └────────────────────┘    │
+│                           │                                     │
+│                    ┌──────▼──────┐                              │
+│                    │   mongodb   │                              │
+│                    │             │                              │
+│                    │  MongoDB    │                              │
+│                    │  (app data) │                              │
+│                    └─────────────┘                              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 | Container | Image | Purpose | Exposes |
 |-----------|-------|---------|---------|
-| `frontend` | custom (nginx + SPA build) | Serves the compiled React app; proxies `/api` to backend | `80` / `443` |
+| `frontend` | custom (nginx + SPA build) | Serves the compiled React app; proxies `/api` to backend, `/dex` to Dex | `80` |
 | `backend` | custom (Node.js) | REST API + SSE; validates JWT; reads/writes MongoDB | `3000` (internal) |
 | `mongodb` | `mongo:7` | Application data store | `27017` (internal) |
-| `zitadel` | `ghcr.io/zitadel/zitadel` | OIDC identity provider; issues & validates tokens | `8080` (internal) |
-| `zitadel-db` | `postgres:16` | Zitadel's own persistence | `5432` (internal) |
+| `dex` | `ghcr.io/dexidp/dex` | OIDC identity provider; static passwords via `config/dex.yaml`; memory storage | `5556` (internal) |
 
 Only the `frontend` container is exposed to the host. All other containers communicate over an internal Docker network.
 
@@ -164,7 +160,7 @@ flexboard/
 | Validation | Zod | TypeScript-native; schemas shared via `packages/shared` |
 | ODM | Mongoose | Schema definitions on top of MongoDB driver |
 | Database | MongoDB 7 | Flexible document model; nested field indexes |
-| Identity provider | Zitadel (self-hosted) | OAuth 2.0 / OIDC; Docker-native; no external dependency |
+| Identity provider | Dex (self-hosted) | OAuth 2.0 / OIDC; single binary; memory storage; bcrypt static passwords; no external database |
 | Token validation | `jose` | JWT / JWKS validation in Node.js |
 | Monorepo tooling | pnpm workspaces + Turborepo | Efficient installs, build caching |
 | Containerization | Docker + Docker Compose | Single-command local and production deployment |
@@ -193,8 +189,10 @@ flexboard/
   "_id": "ObjectId",
   "name": "Project Alpha",
   "description": "## Overview\n\n...",
-  "owner_id": "zitadel-user-id",
-  "member_ids": ["zitadel-user-id", "..."],
+  "members": [
+    { "user_id": "dex-sub-claim", "role": "owner" },
+    { "user_id": "dex-sub-claim", "role": "editor" }
+  ],
   "created_at": "2026-04-01T10:00:00Z",
   "updated_at": "2026-04-03T08:00:00Z"
 }
@@ -224,9 +222,9 @@ flexboard/
   "position": 1,
   "created_at": "2026-04-01T10:00:00Z",
   "updated_at": "2026-04-03T08:30:00Z",
-  "created_by": "zitadel-user-id",
+  "created_by": "dex-sub-claim",
   "attributes": {
-    "assignee": "zitadel-user-id",
+    "assignee": "dex-sub-claim",
     "priority": "high",
     "story_points": 5,
     "labels": ["ux", "backend"],
@@ -241,7 +239,7 @@ flexboard/
 {
   "_id": "ObjectId",
   "card_id": "ObjectId",
-  "author_id": "zitadel-user-id",
+  "author_id": "dex-sub-claim",
   "body": "Markdown-formatted text…",
   "created_at": "2026-04-02T17:05:00Z",
   "updated_at": null
@@ -288,7 +286,7 @@ activity_log: { card_id: 1, created_at: -1 }
 
 Base path: `/api/v1`
 
-All endpoints except authentication-related routes require a valid `Authorization: Bearer <access_token>` header. Token validation is performed by the backend against Zitadel's JWKS endpoint.
+All endpoints except authentication-related routes require a valid `Authorization: Bearer <access_token>` header. Token validation is performed by the backend against Dex's JWKS endpoint (`DEX_JWKS_URL`, default `http://dex:5556/dex/keys`).
 
 ### 6.1 Endpoint Overview
 
@@ -366,15 +364,15 @@ Errors:
 
 ### 7.1 Authentication Flow
 
-Flexboard uses **OAuth 2.0 Authorization Code Flow with PKCE**, delegated entirely to Zitadel. The backend never stores or processes passwords.
+Flexboard uses **OAuth 2.0 Authorization Code Flow with PKCE**, delegated entirely to Dex. The backend never stores or processes passwords.
 
 ```
-Browser                   Frontend (SPA)            Zitadel               Backend
+Browser                   Frontend (SPA)             Dex                Backend
    │                           │                       │                     │
    │  1. Open app              │                       │                     │
    │──────────────────────────▶│                       │                     │
    │                           │  2. No token found    │                     │
-   │                           │  redirect to Zitadel  │                     │
+   │                           │  redirect to Dex      │                     │
    │                           │──────────────────────▶│                     │
    │  3. Show login page       │                       │                     │
    │◀──────────────────────────────────────────────────│                     │
@@ -386,7 +384,7 @@ Browser                   Frontend (SPA)            Zitadel               Backen
    │                           │  for tokens           │                     │
    │                           │──────────────────────▶│                     │
    │                           │  7. Access Token      │                     │
-   │                           │  + Refresh Token      │                     │
+   │                           │  + ID Token           │                     │
    │                           │◀──────────────────────│                     │
    │                           │  8. API request       │                     │
    │                           │  + Bearer token       │                     │
@@ -400,9 +398,11 @@ Browser                   Frontend (SPA)            Zitadel               Backen
 
 **Token storage:** `oidc-client-ts` is configured with `WebStorageStateStore` backed by `localStorage`. This was chosen for simplicity in Phase 1; migration to memory-only storage (with refresh token in an `httpOnly` cookie) is tracked as a Phase 5 security hardening item.
 
-**Zitadel Login V1:** The self-hosted Zitadel instance is configured to use Login V1 (bundled) rather than the separate Login V2 service. This is forced via `ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"` in `docker-compose.yml` (must be set before the first DB initialization). See ADR-11.
+**Sign-out:** Dex does not implement RP-initiated logout (no `end_session_endpoint`). Sign-out clears the local OIDC session (`userManager.removeUser()`) and redirects to `/`, which triggers a fresh login redirect via `AuthGate`.
 
-**Nginx host routing:** All browser and internal Docker traffic destined for Zitadel is routed through the `frontend` nginx container, which rewrites `Host: localhost` on the proxy request. This is required because Zitadel routes requests by the `Host` header matching its configured `ExternalDomain` (`localhost`). Direct calls to `http://zitadel:8080` would produce 404 errors on all paths.
+**Stale session handling:** If the backend returns `401` (e.g. after an app reset when Dex is restarted with new signing keys), the API client calls `signOut()` automatically, clearing the stale token and redirecting the user to the login page.
+
+**Nginx routing:** All Dex traffic is proxied through the nginx `frontend` container at `/dex/`. The Dex issuer is `http://localhost/dex`, so all OIDC discovery, token, and JWKS URLs are valid from both the browser and backend perspectives.
 
 ### 7.2 Authorization Model
 
@@ -417,12 +417,19 @@ Board-level permissions are enforced by the backend on every request:
 Permissions are stored as a `members` array on the board document:
 ```json
 "members": [
-  { "user_id": "zitadel-user-id", "role": "owner" },
-  { "user_id": "zitadel-user-id", "role": "editor" }
+  { "user_id": "<dex sub claim>", "role": "owner" },
+  { "user_id": "<dex sub claim>", "role": "editor" }
 ]
 ```
 
-The backend extracts the `sub` claim from the validated JWT and checks it against the board's member list on every request.
+The backend extracts the `sub` claim from the validated JWT and checks it against the board's member list on every request. The `sub` claim is Dex's stable user identifier (derived from the static password `userID` field in `config/dex.yaml`).
+
+**Invariants enforced by the backend:**
+- A board always has at least one `owner`.
+- Only the `owner` can invite members, change roles, or delete the board.
+- The `editor` role grants full write access to columns and cards but not board settings or membership.
+- The `viewer` role is read-only across all board content.
+- Requests from users not in the `members` list receive `403 Forbidden`.
 
 ---
 
@@ -694,43 +701,31 @@ services:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
-      args:                              # Vite build-time env vars baked into the SPA bundle
-        VITE_ZITADEL_CLIENT_ID: ${VITE_ZITADEL_CLIENT_ID}
-        VITE_ZITADEL_DOMAIN: ${VITE_ZITADEL_DOMAIN}
-    ports: ["80:80"]
-    depends_on: [backend, zitadel]
+    ports: ["${FRONTEND_PORT:-80}:80"]
+    depends_on: [backend]
 
   backend:
     build: ./apps/backend
     environment:
       MONGO_URI: mongodb://mongodb:27017/flexboard
-      ZITADEL_DOMAIN: http://frontend   # ← routed through nginx, which rewrites Host: localhost
+      DEX_ISSUER: http://localhost/dex
+      DEX_JWKS_URL: http://dex:5556/dex/keys   # ← container-to-container, bypasses nginx
       CORS_ORIGIN: http://localhost
-    depends_on: [mongodb, zitadel]
+    depends_on: [mongodb, dex]
 
   mongodb:
     image: mongo:7
     volumes: [mongo-data:/data/db]
 
-  zitadel:
-    image: ghcr.io/zitadel/zitadel:v4.13.1
-    command: start-from-init --masterkey ${ZITADEL_MASTERKEY} --tlsMode disabled
-    environment:
-      ZITADEL_DATABASE_POSTGRES_HOST: zitadel-db
-      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"  # ← forces Login V1
-    depends_on: [zitadel-db]
-
-  zitadel-db:
-    image: postgres:16
-    environment:
-      POSTGRES_DB: zitadel
-      POSTGRES_USER: zitadel
-      POSTGRES_PASSWORD: ${ZITADEL_DB_PASSWORD}
-    volumes: [zitadel-db-data:/var/lib/postgresql/data]
+  dex:
+    image: ghcr.io/dexidp/dex:v2.41.1
+    command: dex serve /etc/dex/config.yaml
+    volumes:
+      - ./config/dex.yaml:/etc/dex/config.yaml:ro   # ← generated by scripts/init.sh
+    ports: ["${DEX_PORT:-5556}:5556"]
 
 volumes:
   mongo-data:
-  zitadel-db-data:
 ```
 
 ### 11.2 Multi-Stage Dockerfiles
@@ -756,15 +751,13 @@ All runtime configuration is provided via environment variables. Secrets are nev
 | Variable | Service | Description |
 |----------|---------|-------------|
 | `MONGO_URI` | backend | MongoDB connection string (default: `mongodb://mongodb:27017/flexboard`) |
-| `ZITADEL_DOMAIN` | backend | Base URL used to fetch JWKS — must be `http://frontend` so nginx rewrites `Host: localhost` |
-| `CORS_ORIGIN` | backend | Allowed CORS origin (default: `http://localhost:5173`) |
-| `VITE_ZITADEL_CLIENT_ID` | frontend build | OIDC client ID baked into the SPA at build time |
-| `VITE_ZITADEL_DOMAIN` | frontend build | Zitadel authority URL baked into the SPA (e.g. `http://localhost`) |
-| `ZITADEL_MASTERKEY` | zitadel | 32-byte master encryption key |
-| `ZITADEL_DB_PASSWORD` | zitadel-db | PostgreSQL password for Zitadel |
-| `ZITADEL_ADMIN_PASSWORD` | zitadel | Initial admin console password |
+| `DEX_ISSUER` | backend | OIDC issuer claim to validate (default: `http://localhost/dex`) |
+| `DEX_JWKS_URL` | backend | Internal JWKS URL for token validation (default: `http://dex:5556/dex/keys`) |
+| `CORS_ORIGIN` | backend | Allowed CORS origin (default: `http://localhost`) |
+| `FRONTEND_PORT` | host | Host port for the nginx frontend (default: `80`) |
+| `DEX_PORT` | host | Host port for the Dex container (default: `5556`) |
 
-> **Important:** `VITE_*` variables must be passed as Docker `build.args` in `docker-compose.yml` — they are not available at runtime and `.env` is not copied into the image. The frontend Dockerfile declares matching `ARG` and `ENV` directives for each.
+No build-time environment variables are required. All OIDC configuration (`authority`, `client_id`) is hardcoded to the Dex defaults and requires no `.env` file for a standard local setup. The Dex admin password is stored as a bcrypt hash in `config/dex.yaml` (generated by `scripts/init.sh`; gitignored).
 
 ---
 
@@ -775,12 +768,12 @@ All runtime configuration is provided via environment variables. Secrets are nev
 | ADR-01 | Database | **MongoDB** | Native JSON document model; flexible nested indexes; no migration overhead for new card types |
 | ADR-02 | API paradigm | **REST** | Sufficient for CRUD; simpler than GraphQL for a single-client web app |
 | ADR-03 | Frontend framework | **React + TypeScript** | Largest ecosystem; strong typing |
-| ADR-04 | Authentication | **OAuth 2.0 / OIDC via Zitadel** (self-hosted) | No external dependency; supports future mobile clients; PKCE flow; token revocation via refresh token |
+| ADR-04 | Authentication | **OAuth 2.0 / OIDC via Dex** (self-hosted) | No external dependency; single binary; no database; bcrypt static passwords; PKCE flow. Replaced Zitadel (v4.13.x required PostgreSQL, had fragile PAT-based initialisation, and enforced password complexity at DB migration time making reproducible setup unreliable). |
 | ADR-05 | Card type schemas | **YAML config file, seeded into MongoDB** | Git-versioned source of truth; runtime extensibility without deployment |
 | ADR-06 | Internationalisation | **react-i18next** from day one | Prevents costly retrofitting; English only for MVP |
 | ADR-07 | Real-time updates | **Server-Sent Events (SSE)** | Sufficient for unidirectional board updates; simpler than WebSockets; no additional infrastructure |
 | ADR-08 | Theming | **CSS custom properties** via `shadcn/ui` | Zero-JS theme switching; extensible without code changes; FOUC-safe |
 | ADR-09 | Backend technology | **Node.js 22 + Fastify + TypeScript** | Same language as frontend enables shared Zod schemas and types via `packages/shared`; Fastify has lower memory footprint (~60–150 MB) and better performance than Spring Boot; preferred over Go to preserve monorepo code sharing |
 | ADR-10 | Frontend styling | **Plain CSS (`src/index.css`)** | shadcn/ui + Tailwind were the original plan, but the HTML mockups already defined a complete, consistent design system. Transcribing that directly to a single CSS file was faster, removed a large dependency chain, and produced pixel-faithful results. May revisit if component reuse demands grow. |
-| ADR-11 | Zitadel login UI | **Login V1 (bundled)** | Zitadel v4.13.1's Login V2 requires the `session.link` permission for `OIDCService/CreateCallback`, which is not mapped to any standard role in this version. All attempts to grant it failed with `AUTH-AWfge: No matching permissions found`. Login V1 is bundled directly in the Zitadel binary and works without additional permissions. Forced via `ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "false"` (must be set before first DB init). |
+| ADR-11 | User management | **Dex static passwords (`config/dex.yaml`)** | Chosen over in-app registration (too much custom work) and external OAuth connectors (GitHub/Google — complicates fully local setup). Static passwords suit a small, known user group managed by an admin. Adding a user requires editing `config/dex.yaml` and restarting the Dex container. Passwords stored as bcrypt hashes. |
 | ADR-12 | SSE authentication | **Access token in `?token=` query param** | The browser's `EventSource` API does not support custom request headers, making the standard `Authorization: Bearer` pattern impossible. Alternatives considered: (1) short-lived SSE-specific tokens — adds complexity; (2) cookies — requires changing the OIDC token storage strategy. Query-param token is the established pattern for SSE auth in single-page apps. The exposure risk is low in a self-hosted deployment over localhost/private network. |
