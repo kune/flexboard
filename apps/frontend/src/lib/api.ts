@@ -1,4 +1,4 @@
-import type { Board, Column, Card, CardTypeSchema, Comment, ActivityEntry } from '@flexboard/shared'
+import type { Board, BoardMemberEnriched, Column, Card, CardTypeSchema, Comment, ActivityEntry, UserRole } from '@flexboard/shared'
 import { getAccessToken, signOut } from './auth'
 
 const BASE = '/api/v1'
@@ -103,3 +103,28 @@ export const deleteComment = (boardId: string, cardId: string, id: string) =>
 
 export const getActivity = (boardId: string, cardId: string) =>
   request<ActivityEntry[]>(`/boards/${boardId}/cards/${cardId}/activity`)
+
+// ── Members ───────────────────────────────────────────────
+
+export const getMembers = (boardId: string) =>
+  request<BoardMemberEnriched[]>(`/boards/${boardId}/members`)
+
+export const addMember = (boardId: string, data: { email: string; role: UserRole }) =>
+  request<BoardMemberEnriched>(`/boards/${boardId}/members`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+
+export const updateMember = (boardId: string, userId: string, role: UserRole) =>
+  request<{ userId: string; role: UserRole }>(`/boards/${boardId}/members/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  })
+
+export const removeMember = (boardId: string, userId: string) =>
+  request<void>(`/boards/${boardId}/members/${userId}`, { method: 'DELETE' })
+
+// ── User search ───────────────────────────────────────────
+
+export const searchUsers = (email: string) =>
+  request<{ sub: string; email: string; name: string }[]>(`/users?email=${encodeURIComponent(email)}`)

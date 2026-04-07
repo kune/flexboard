@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
 import type { AttributeFieldSchema } from '@flexboard/shared'
 import {
   getBoard, getCard, updateCard, deleteCard, getColumns, getCardTypes,
   getComments, createComment, updateComment, deleteComment,
-  getActivity,
+  getActivity, getMembers,
 } from '@/lib/api'
 import { useUiStore } from '@/store/uiStore'
 import { useBoardSSE } from '@/hooks/useBoardSSE'
 import { AttributeRow, AttributeInput, AttributeValue } from '@/components/AttributeField'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -41,8 +42,10 @@ function activityLabel(event: string, payload: Record<string, unknown>): string 
   }
 }
 
-function shortId(sub: string): string {
-  return sub.slice(-4).toUpperCase()
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase()
 }
 
 // ── Comments section ──────────────────────────────────────
@@ -51,13 +54,16 @@ interface CommentsSectionProps {
   boardId: string
   cardId: string
   currentSub: string
+  nameMap: Map<string, string>
 }
 
-function CommentsSection({ boardId, cardId, currentSub }: CommentsSectionProps) {
+function CommentsSection({ boardId, cardId, currentSub, nameMap }: CommentsSectionProps) {
   const qc = useQueryClient()
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editBody, setEditBody] = useState('')
+  const [editOriginalBody, setEditOriginalBody] = useState('')
+  const [confirm, setConfirm] = useState<{ message: string; detail?: string; onConfirm: () => void } | null>(null)
 
   const { data: comments = [] } = useQuery({
     queryKey: ['comments', boardId, cardId],
@@ -86,6 +92,32 @@ function CommentsSection({ boardId, cardId, currentSub }: CommentsSectionProps) 
     onSuccess: () => qc.invalidateQueries({ queryKey: ['comments', boardId, cardId] }),
   })
 
+  const startEdit = (id: string, body: string) => {
+    setEditingId(id)
+    setEditBody(body)
+    setEditOriginalBody(body)
+  }
+
+  const cancelEdit = () => {
+    if (editBody.trim() !== editOriginalBody.trim()) {
+      setConfirm({
+        message: 'Discard changes?',
+        detail: 'Your edits to this comment will be lost.',
+        onConfirm: () => { setEditingId(null); setConfirm(null) },
+      })
+    } else {
+      setEditingId(null)
+    }
+  }
+
+  const confirmDelete = (id: string) => {
+    setConfirm({
+      message: 'Delete comment?',
+      detail: 'This action cannot be undone.',
+      onConfirm: () => { deleteMutation.mutate(id); setConfirm(null) },
+    })
+  }
+
   return (
     <div className="comments-section">
       <div className="comments-title">Comments {comments.length > 0 && `(${comments.length})`}</div>
@@ -96,10 +128,10 @@ function CommentsSection({ boardId, cardId, currentSub }: CommentsSectionProps) 
 
       {comments.map((c) => (
         <div key={c.id} className="comment-item">
-          <div className="comment-avatar">{shortId(c.authorId)}</div>
+          <div className="comment-avatar">{initials(nameMap.get(c.authorId) ?? c.authorId)}</div>
           <div className="comment-body">
             <div className="comment-meta">
-              <span className="comment-author">{shortId(c.authorId)}</span>
+              <span className="comment-author">{nameMap.get(c.authorId) ?? c.authorId}</span>
               <span className="comment-time">{timeAgo(c.createdAt)}</span>
             </div>
 
@@ -121,7 +153,7 @@ function CommentsSection({ boardId, cardId, currentSub }: CommentsSectionProps) 
                   >
                     Save
                   </button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>
+                  <button className="btn btn-ghost btn-sm" onClick={cancelEdit}>
                     Cancel
                   </button>
                 </div>
@@ -133,13 +165,13 @@ function CommentsSection({ boardId, cardId, currentSub }: CommentsSectionProps) 
                   <div className="comment-actions">
                     <button
                       className="comment-action-btn"
-                      onClick={() => { setEditingId(c.id); setEditBody(c.body) }}
+                      onClick={() => startEdit(c.id, c.body)}
                     >
                       Edit
                     </button>
                     <button
                       className="comment-action-btn danger"
-                      onClick={() => deleteMutation.mutate(c.id)}
+                      onClick={() => confirmDelete(c.id)}
                     >
                       Delete
                     </button>
@@ -152,7 +184,7 @@ function CommentsSection({ boardId, cardId, currentSub }: CommentsSectionProps) 
       ))}
 
       <div className="comment-input-wrap">
-        <div className="comment-avatar">{shortId(currentSub)}</div>
+        <div className="comment-avatar">{initials(nameMap.get(currentSub) ?? currentSub)}</div>
         <div style={{ flex: 1 }}>
           <div className="comment-input-box">
             <textarea
@@ -178,6 +210,17 @@ function CommentsSection({ boardId, cardId, currentSub }: CommentsSectionProps) 
           </div>
         </div>
       </div>
+
+      {confirm && (
+        <ConfirmDialog
+          message={confirm.message}
+          detail={confirm.detail}
+          confirmLabel="Discard"
+          danger
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
     </div>
   )
 }
@@ -223,6 +266,7 @@ export default function CardDetail() {
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editAttrs, setEditAttrs] = useState<Record<string, unknown>>({})
+  const [confirm, setConfirm] = useState<{ message: string; detail?: string; danger?: boolean; confirmLabel?: string; onConfirm: () => void } | null>(null)
 
   const { data: board } = useQuery({
     queryKey: ['board', boardId],
@@ -246,6 +290,14 @@ export default function CardDetail() {
     queryKey: ['card-types'],
     queryFn: getCardTypes,
   })
+
+  const { data: members } = useQuery({
+    queryKey: ['members', boardId],
+    queryFn: () => getMembers(boardId!),
+    enabled: !!boardId,
+  })
+
+  const nameMap = new Map(members?.map((m) => [m.userId, m.name]) ?? [])
 
   // Current user sub from localStorage (set by oidc-client-ts)
   const currentSub: string = (() => {
@@ -320,10 +372,36 @@ export default function CardDetail() {
   // Markdown attribute fields rendered in main panel (below description)
   const markdownFields = schemaFields.filter((f) => f.type === 'markdown')
 
+  // Dirty check — safe to compute before early returns because !!card guards it
+  const isDirty = !!card && editing && (
+    editTitle !== card.title ||
+    editDescription !== (card.description ?? '') ||
+    JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {})
+  )
+
+  // Block in-app navigation (React Router links, browser back/forward within SPA)
+  const blocker = useBlocker(isDirty)
+
+  // Block browser-native navigation (address bar, close tab, hard reload)
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
   if (isLoading) return <div className="loading-center">Loading card…</div>
   if (!card) return <div className="loading-center">Card not found.</div>
 
+  const resetEdit = () => {
+    setEditTitle(card.title)
+    setEditDescription(card.description ?? '')
+    setEditAttrs({ ...(card.attributes ?? {}) })
+    setEditing(false)
+  }
+
   return (
+    <>
     <div className="detail-layout">
       {/* ── Main panel ── */}
       <div className="detail-main">
@@ -331,14 +409,52 @@ export default function CardDetail() {
           <Link to={`/boards/${boardId}`} className="btn btn-ghost btn-sm">← Back</Link>
           <TypeBadge type={card.type} />
           <div style={{ flex: 1 }} />
-          {!editing && (
+          {editing ? (
+            <>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => saveMutation.mutate()}
+                disabled={!editTitle.trim() || saveMutation.isPending}
+              >
+                {saveMutation.isPending ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  const dirty =
+                    editTitle !== card.title ||
+                    editDescription !== (card.description ?? '') ||
+                    JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {})
+                  if (dirty) {
+                    setConfirm({
+                      message: 'Discard changes?',
+                      detail: 'Your unsaved edits to this card will be lost.',
+                      danger: true,
+                      confirmLabel: 'Discard',
+                      onConfirm: () => { resetEdit(); setConfirm(null) },
+                    })
+                  } else {
+                    resetEdit()
+                  }
+                }}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
             <button className="btn btn-secondary btn-sm" onClick={() => setEditing(true)}>
               Edit
             </button>
           )}
           <button
             className="btn btn-danger btn-sm"
-            onClick={() => { if (confirm('Delete this card?')) deleteMutation.mutate() }}
+            onClick={() => setConfirm({
+              message: 'Delete card?',
+              detail: `"${card.title}" will be permanently deleted.`,
+              danger: true,
+              confirmLabel: 'Delete',
+              onConfirm: () => { deleteMutation.mutate(); setConfirm(null) },
+            })}
           >
             Delete
           </button>
@@ -376,22 +492,11 @@ export default function CardDetail() {
                   field={f}
                   value={editAttrs[f.key]}
                   onChange={handleAttrChange}
+                  members={members}
                 />
               </div>
             ))}
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => saveMutation.mutate()}
-                disabled={!editTitle.trim() || saveMutation.isPending}
-              >
-                {saveMutation.isPending ? 'Saving…' : 'Save'}
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>
-                Cancel
-              </button>
-            </div>
           </>
         ) : (
           <>
@@ -429,7 +534,7 @@ export default function CardDetail() {
           </>
         )}
 
-        <CommentsSection boardId={boardId!} cardId={cardId!} currentSub={currentSub} />
+        <CommentsSection boardId={boardId!} cardId={cardId!} currentSub={currentSub} nameMap={nameMap} />
       </div>
 
       {/* ── Sidebar ── */}
@@ -483,12 +588,13 @@ export default function CardDetail() {
                       field={f}
                       value={editAttrs[f.key]}
                       onChange={handleAttrChange}
+                      members={members}
                     />
                   </div>
                 ))
             ) : (
               schemaFields.map((f) => (
-                <AttributeRow key={f.key} field={f} value={card.attributes?.[f.key]} />
+                <AttributeRow key={f.key} field={f} value={card.attributes?.[f.key]} nameMap={nameMap} />
               ))
             )}
           </div>
@@ -497,5 +603,28 @@ export default function CardDetail() {
         <ActivitySection boardId={boardId!} cardId={cardId!} />
       </div>
     </div>
+
+    {confirm && (
+      <ConfirmDialog
+        message={confirm.message}
+        detail={confirm.detail}
+        danger={confirm.danger}
+        confirmLabel={confirm.confirmLabel}
+        onConfirm={confirm.onConfirm}
+        onCancel={() => setConfirm(null)}
+      />
+    )}
+
+    {blocker.state === 'blocked' && (
+      <ConfirmDialog
+        message="Discard changes?"
+        detail="You have unsaved edits. Leaving this page will discard them."
+        confirmLabel="Leave"
+        danger
+        onConfirm={() => blocker.proceed()}
+        onCancel={() => blocker.reset()}
+      />
+    )}
+    </>
   )
 }

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import mongoose from 'mongoose'
 import { requireAuth, type AuthPayload } from '../lib/auth.js'
+import { canRead } from '../lib/permissions.js'
 import { Board } from '../models/board.js'
 import { Card } from '../models/card.js'
 import { ActivityLog } from '../models/activitylog.js'
@@ -19,7 +20,7 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
       }
       const board = await Board.findById(boardId)
       if (!board) return reply.code(404).send({ error: 'Not found' })
-      if (board.ownerId !== sub && !board.memberIds.includes(sub)) {
+      if (!canRead(board, sub)) {
         return reply.code(403).send({ error: 'Forbidden' })
       }
       const card = await Card.findOne({ _id: cardId, boardId })

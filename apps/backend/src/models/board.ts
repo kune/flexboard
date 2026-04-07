@@ -1,4 +1,5 @@
 import mongoose, { type Document, type Model } from 'mongoose'
+import type { UserRole } from '@flexboard/shared'
 
 // ── Column ────────────────────────────────────────────────────────────────────
 
@@ -31,24 +32,37 @@ export const Column: Model<IColumn> = mongoose.model('Column', columnSchema)
 
 // ── Board ─────────────────────────────────────────────────────────────────────
 
+export interface IBoardMember {
+  userId: string
+  role: UserRole
+}
+
 export interface IBoard extends Document {
   name: string
   description?: string
-  ownerId: string
-  memberIds: string[]
+  members: IBoardMember[]
   createdAt: Date
   updatedAt: Date
 }
+
+const boardMemberSchema = new mongoose.Schema<IBoardMember>(
+  {
+    userId: { type: String, required: true },
+    role: { type: String, enum: ['owner', 'editor', 'viewer'], required: true },
+  },
+  { _id: false },
+)
 
 const boardSchema = new mongoose.Schema<IBoard>(
   {
     name: { type: String, required: true },
     description: { type: String },
-    ownerId: { type: String, required: true, index: true },
-    memberIds: { type: [String], default: [] },
+    members: { type: [boardMemberSchema], default: [] },
   },
   { timestamps: true },
 )
+
+boardSchema.index({ 'members.userId': 1 })
 
 boardSchema.set('toJSON', {
   virtuals: true,

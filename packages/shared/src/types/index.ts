@@ -24,14 +24,23 @@ export interface CardTypeSchema {
   attributes: AttributeFieldSchema[]
 }
 
+export interface BoardMember {
+  userId: string
+  role: UserRole
+}
+
 export interface Board {
   id: string
   name: string
   description?: string
-  ownerId: string
-  memberIds: string[]
+  members: BoardMember[]
   createdAt: string
   updatedAt: string
+}
+
+export interface BoardMemberEnriched extends BoardMember {
+  email: string
+  name: string
 }
 
 export interface Column {

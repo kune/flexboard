@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import mongoose from 'mongoose'
 import { requireAuth, type AuthPayload } from '../lib/auth.js'
+import { canRead, canWrite } from '../lib/permissions.js'
 import { Board } from '../models/board.js'
 import { Card } from '../models/card.js'
 import { ActivityLog } from '../models/activitylog.js'
@@ -15,8 +16,7 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
     if (!mongoose.isValidObjectId(boardId)) return reply.code(404).send({ error: 'Not found' })
     const board = await Board.findById(boardId)
     if (!board) return reply.code(404).send({ error: 'Not found' })
-    if (board.ownerId !== sub && !board.memberIds.includes(sub))
-      return reply.code(403).send({ error: 'Forbidden' })
+    if (!canRead(board, sub)) return reply.code(403).send({ error: 'Forbidden' })
     return Card.find({ boardId }).sort({ position: 1 })
   })
 
@@ -26,8 +26,7 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
     if (!mongoose.isValidObjectId(boardId)) return reply.code(404).send({ error: 'Not found' })
     const board = await Board.findById(boardId)
     if (!board) return reply.code(404).send({ error: 'Not found' })
-    if (board.ownerId !== sub && !board.memberIds.includes(sub))
-      return reply.code(403).send({ error: 'Forbidden' })
+    if (!canWrite(board, sub)) return reply.code(403).send({ error: 'Forbidden' })
     const { columnId, type, title, description, position, attributes } = req.body as {
       columnId: string
       type: string
@@ -73,8 +72,7 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(404).send({ error: 'Not found' })
       const board = await Board.findById(boardId)
       if (!board) return reply.code(404).send({ error: 'Not found' })
-      if (board.ownerId !== sub && !board.memberIds.includes(sub))
-        return reply.code(403).send({ error: 'Forbidden' })
+      if (!canRead(board, sub)) return reply.code(403).send({ error: 'Forbidden' })
       const card = await Card.findOne({ _id: id, boardId })
       if (!card) return reply.code(404).send({ error: 'Not found' })
       return card
@@ -91,8 +89,7 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(404).send({ error: 'Not found' })
       const board = await Board.findById(boardId)
       if (!board) return reply.code(404).send({ error: 'Not found' })
-      if (board.ownerId !== sub && !board.memberIds.includes(sub))
-        return reply.code(403).send({ error: 'Forbidden' })
+      if (!canWrite(board, sub)) return reply.code(403).send({ error: 'Forbidden' })
       const card = await Card.findOne({ _id: id, boardId })
       if (!card) return reply.code(404).send({ error: 'Not found' })
       const { columnId, title, description, position, attributes } = req.body as {
@@ -144,8 +141,7 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
         return reply.code(404).send({ error: 'Not found' })
       const board = await Board.findById(boardId)
       if (!board) return reply.code(404).send({ error: 'Not found' })
-      if (board.ownerId !== sub && !board.memberIds.includes(sub))
-        return reply.code(403).send({ error: 'Forbidden' })
+      if (!canWrite(board, sub)) return reply.code(403).send({ error: 'Forbidden' })
       const card = await Card.findOne({ _id: id, boardId })
       if (!card) return reply.code(404).send({ error: 'Not found' })
       await card.deleteOne()

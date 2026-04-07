@@ -178,6 +178,16 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   margin-bottom: 20px;
 }
 .page-title { font-size: 18px; font-weight: 700; }
+.page-section-title { font-size: 14px; font-weight: 600; color: #64748b; margin: 28px 0 14px; }
+
+.board-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+  gap: 8px;
+}
 
 .boards-grid {
   display: grid;
@@ -298,8 +308,25 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   justify-content: space-between;
   margin-bottom: 6px;
 }
-.kcard-title { font-size: 13px; font-weight: 500; color: #1e293b; margin-bottom: 8px; line-height: 1.4; }
-.kcard-footer { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.kcard-title { font-size: 13px; font-weight: 500; color: #1e293b; margin-bottom: 9px; line-height: 1.4; }
+.kcard-id    { font-size: 11px; color: #94a3b8; font-weight: 500; }
+.kcard-footer { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 2px; }
+
+/* ─── Priority dot ────────────────────────────────────────── */
+.prio-dot      { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.prio-critical { background: #dc2626; }
+.prio-high     { background: #ea580c; }
+.prio-medium   { background: #d97706; }
+.prio-low      { background: #94a3b8; }
+
+/* ─── Avatars ─────────────────────────────────────────────── */
+.avatar    { display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 700; color: #fff; flex-shrink: 0; }
+.avatar-sm { width: 22px; height: 22px; font-size: 10px; }
+.av-blue   { background: #2563eb; }
+.av-purple { background: #7c3aed; }
+.av-green  { background: #16a34a; }
+.av-orange { background: #ea580c; }
+.av-red    { background: #dc2626; }
 .kanban-add-btn {
   width: calc(100% - 20px);
   margin: 0 10px 10px;

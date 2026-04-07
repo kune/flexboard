@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import mongoose from 'mongoose'
 import { verifyToken } from '../lib/auth.js'
+import { canRead } from '../lib/permissions.js'
 import { subscribe, unsubscribe } from '../lib/sse.js'
 import { Board } from '../models/board.js'
 
@@ -17,7 +18,7 @@ export async function sseRoutes(app: FastifyInstance): Promise<void> {
     if (!mongoose.isValidObjectId(boardId)) return reply.code(404).send({ error: 'Not found' })
     const board = await Board.findById(boardId)
     if (!board) return reply.code(404).send({ error: 'Not found' })
-    if (board.ownerId !== payload.sub && !board.memberIds.includes(payload.sub)) {
+    if (!canRead(board, payload.sub)) {
       return reply.code(403).send({ error: 'Forbidden' })
     }
 

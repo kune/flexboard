@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   DndContext,
@@ -25,18 +25,33 @@ import {
   getBoard,
   getColumns,
   getCards,
+  getMembers,
   createColumn,
   createCard,
   updateCard,
-  deleteCard,
 } from '@/lib/api'
+import { getUser } from '@/lib/auth'
 import { useUiStore } from '@/store/uiStore'
 import { useBoardSSE } from '@/hooks/useBoardSSE'
+import BoardMembers from '@/components/BoardMembers'
 
-// ── Badge ─────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────
 
 function TypeBadge({ type }: { type: string }) {
   return <span className={`badge badge-${type}`}>{type}</span>
+}
+
+const AVATAR_COLORS = ['av-blue', 'av-purple', 'av-green', 'av-orange', 'av-red']
+function avatarColor(sub: string): string {
+  let h = 0
+  for (let i = 0; i < sub.length; i++) h = (h * 31 + sub.charCodeAt(i)) >>> 0
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+}
+
+function nameInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return name.slice(0, 2).toUpperCase()
 }
 
 // ── Card Item ─────────────────────────────────────────────
@@ -44,10 +59,10 @@ function TypeBadge({ type }: { type: string }) {
 interface KCardProps {
   card: Card
   boardId: string
-  onDelete: (id: string) => void
+  nameMap: Map<string, string>
 }
 
-function KCard({ card, boardId, onDelete }: KCardProps) {
+function KCard({ card, boardId, nameMap }: KCardProps) {
   const navigate = useNavigate()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
@@ -60,6 +75,17 @@ function KCard({ card, boardId, onDelete }: KCardProps) {
     opacity: isDragging ? 0.4 : 1,
   }
 
+  const assigneeSub = typeof card.attributes?.assignee === 'string' ? card.attributes.assignee : null
+  const assigneeName = assigneeSub ? (nameMap.get(assigneeSub) ?? assigneeSub) : null
+  const priority = typeof card.attributes?.priority === 'string' ? card.attributes.priority : null
+  const labels: string[] = Array.isArray(card.attributes?.labels)
+    ? (card.attributes.labels as string[])
+    : typeof card.attributes?.labels === 'string'
+    ? (card.attributes.labels as string).split(',').map((s) => s.trim()).filter(Boolean)
+    : []
+  const shortId = card.id.slice(-5)
+  const hasFooter = labels.length > 0 || priority || assigneeName
+
   return (
     <div
       ref={setNodeRef}
@@ -71,28 +97,52 @@ function KCard({ card, boardId, onDelete }: KCardProps) {
     >
       <div className="kcard-top">
         <TypeBadge type={card.type} />
-        <button
-          className="btn btn-ghost btn-sm"
-          style={{ padding: '2px 4px', fontSize: 12, color: '#94a3b8' }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); onDelete(card.id) }}
-          title="Delete card"
-        >
-          ×
-        </button>
+        <span className="kcard-id" style={{ marginLeft: 'auto' }}>#{shortId}</span>
       </div>
       <div className="kcard-title">{card.title}</div>
+      {hasFooter && (
+        <div className="kcard-footer">
+          {labels.map((tag) => (
+            <span key={tag} className="label-tag">{tag}</span>
+          ))}
+          {priority && (
+            <span className={`prio-dot prio-${priority}`} title={priority} />
+          )}
+          {assigneeName && (
+            <span
+              className={`avatar avatar-sm ${avatarColor(assigneeSub!)}`}
+              title={assigneeName}
+              style={{ marginLeft: 'auto' }}
+            >
+              {nameInitials(assigneeName)}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 function CardOverlay({ card }: { card: Card }) {
+  const priority = typeof card.attributes?.priority === 'string' ? card.attributes.priority : null
+  const labels: string[] = Array.isArray(card.attributes?.labels)
+    ? (card.attributes.labels as string[])
+    : []
+  const hasFooter = labels.length > 0 || priority
+
   return (
     <div className="kcard" style={{ boxShadow: '0 8px 24px rgba(0,0,0,.15)', cursor: 'grabbing' }}>
       <div className="kcard-top">
         <TypeBadge type={card.type} />
+        <span className="kcard-id">#{card.id.slice(-5)}</span>
       </div>
       <div className="kcard-title">{card.title}</div>
+      {hasFooter && (
+        <div className="kcard-footer">
+          {labels.map((tag) => <span key={tag} className="label-tag">{tag}</span>)}
+          {priority && <span className={`prio-dot prio-${priority}`} title={priority} />}
+        </div>
+      )}
     </div>
   )
 }
@@ -166,10 +216,10 @@ interface KColumnProps {
   col: Column
   cards: Card[]
   boardId: string
-  onDeleteCard: (id: string) => void
+  nameMap: Map<string, string>
 }
 
-function KColumn({ col, cards, boardId, onDeleteCard }: KColumnProps) {
+function KColumn({ col, cards, boardId, nameMap }: KColumnProps) {
   const [addingCard, setAddingCard] = useState(false)
   const cardIds = cards.map((c) => c.id)
 
@@ -188,7 +238,7 @@ function KColumn({ col, cards, boardId, onDeleteCard }: KColumnProps) {
       <SortableContext items={cardIds} strategy={verticalListSortingStrategy} id={col.id}>
         <div ref={setDropRef} className="kanban-col-body" data-column-id={col.id}>
           {cards.map((card) => (
-            <KCard key={card.id} card={card} boardId={boardId} onDelete={onDeleteCard} />
+            <KCard key={card.id} card={card} boardId={boardId} nameMap={nameMap} />
           ))}
         </div>
       </SortableContext>
@@ -261,6 +311,8 @@ function AddColumnModal({ boardId, onClose }: { boardId: string; onClose: () => 
 export default function Board() {
   const { id: boardId } = useParams<{ id: string }>()
   const [showAddCol, setShowAddCol] = useState(false)
+  const [showMembers, setShowMembers] = useState(false)
+  const [currentUserSub, setCurrentUserSub] = useState<string | null>(null)
   const [activeCard, setActiveCard] = useState<Card | null>(null)
   const [localCards, setLocalCards] = useState<Card[] | null>(null)
   // Track the column the card started in — handleDragOver mutates localCards before
@@ -268,6 +320,10 @@ export default function Board() {
   const dragSourceColId = useRef<string | null>(null)
   const setBoardCrumb = useUiStore((s) => s.setBoardCrumb)
   const qc = useQueryClient()
+
+  useEffect(() => {
+    getUser().then((u) => setCurrentUserSub(u?.profile.sub ?? null))
+  }, [])
 
   const { data: board } = useQuery({
     queryKey: ['board', boardId],
@@ -287,6 +343,14 @@ export default function Board() {
     enabled: !!boardId,
   })
 
+  const { data: members } = useQuery({
+    queryKey: ['members', boardId],
+    queryFn: () => getMembers(boardId!),
+    enabled: !!boardId,
+  })
+
+  const nameMap = new Map(members?.map((m) => [m.userId, m.name]) ?? [])
+
   useEffect(() => {
     setBoardCrumb(boardId ?? null, board?.name ?? null)
     return () => setBoardCrumb(null, null)
@@ -298,11 +362,6 @@ export default function Board() {
   useEffect(() => {
     if (cards) setLocalCards(cards)
   }, [cards])
-
-  const deleteMutation = useMutation({
-    mutationFn: (cardId: string) => deleteCard(boardId!, cardId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['cards', boardId] }),
-  })
 
   const moveMutation = useMutation({
     mutationFn: ({ cardId, data }: { cardId: string; data: { columnId?: string; position?: number } }) =>
@@ -384,6 +443,13 @@ export default function Board() {
 
   return (
     <>
+      <div className="board-toolbar">
+        <div style={{ flex: 1 }} />
+        <button className="btn btn-secondary btn-sm" onClick={() => setShowMembers(true)}>
+          Members
+        </button>
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -398,7 +464,7 @@ export default function Board() {
               col={col}
               cards={cardsForColumn(col.id)}
               boardId={boardId!}
-              onDeleteCard={(id) => deleteMutation.mutate(id)}
+              nameMap={nameMap}
             />
           ))}
 
@@ -413,6 +479,13 @@ export default function Board() {
       </DndContext>
 
       {showAddCol && <AddColumnModal boardId={boardId!} onClose={() => setShowAddCol(false)} />}
+      {showMembers && currentUserSub && (
+        <BoardMembers
+          boardId={boardId!}
+          currentUserSub={currentUserSub}
+          onClose={() => setShowMembers(false)}
+        />
+      )}
     </>
   )
 }

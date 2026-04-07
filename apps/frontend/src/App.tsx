@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Routes, Route, Outlet } from 'react-router-dom'
 import { type User } from 'oidc-client-ts'
 import { getUser, signIn } from '@/lib/auth'
 import AuthCallback from '@/pages/AuthCallback'
@@ -33,22 +33,24 @@ function AuthGate() {
   return (
     <>
       <Nav user={user} />
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/boards/:id" element={<Board />} />
-        <Route path="/boards/:id/cards/:cardId" element={<CardDetail />} />
-      </Routes>
+      <Outlet />
     </>
   )
 }
 
+const router = createBrowserRouter([
+  { path: '/auth/callback', element: <AuthCallback /> },
+  {
+    path: '/',
+    element: <AuthGate />,
+    children: [
+      { index: true, element: <Dashboard /> },
+      { path: 'boards/:id', element: <Board /> },
+      { path: 'boards/:id/cards/:cardId', element: <CardDetail /> },
+    ],
+  },
+])
+
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/*" element={<AuthGate />} />
-      </Routes>
-    </BrowserRouter>
-  )
+  return <RouterProvider router={router} />
 }

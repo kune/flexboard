@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import mongoose from 'mongoose'
 import { requireAuth, type AuthPayload } from '../lib/auth.js'
+import { canRead } from '../lib/permissions.js'
 import { Board } from '../models/board.js'
 import { Card } from '../models/card.js'
 import { Comment } from '../models/comment.js'
@@ -20,7 +21,7 @@ async function assertAccess(
   }
   const board = await Board.findById(boardId)
   if (!board) { reply.code(404).send({ error: 'Not found' }); return false }
-  if (board.ownerId !== sub && !board.memberIds.includes(sub)) {
+  if (!canRead(board, sub)) {
     reply.code(403).send({ error: 'Forbidden' }); return false
   }
   const card = await Card.findOne({ _id: cardId, boardId })

@@ -96,7 +96,32 @@ Boards support **role-based access control** with three roles:
 - Cards can receive **comments** (free text, Markdown-capable) associated with a user and a timestamp.
 - Changes to cards are recorded in an **activity log** (who changed what, and when?).
 
-### FR-07 – Real-time Updates
+### FR-07 – Confirmation Dialogs
+
+To prevent accidental data loss, the UI shows a **confirmation dialog** before any of the following actions:
+
+| Trigger | Dialog behaviour |
+|---------|-----------------|
+| Cancelling a card edit when changes have been made | "Discard changes?" — lists that unsaved edits will be lost; confirm button labelled **Discard** |
+| Cancelling a comment edit when the text has been changed | Same "Discard changes?" pattern |
+| Deleting a card | "Delete card?" — shows card title; confirm button labelled **Delete** |
+| Deleting a comment | "Delete comment?" — warns action cannot be undone; confirm button labelled **Discard** |
+| Removing a member from a board | "Remove member?" — names the member and states they will lose access; confirm button labelled **Remove** |
+
+Dialogs are rendered as modal overlays (using the shared `ConfirmDialog` component). The confirm button is styled in red (`btn-danger`) for all destructive actions. Clicking the backdrop or the Cancel button always dismisses the dialog without taking action.
+
+Edits with **no changes** (e.g. opening edit mode and immediately clicking Cancel) dismiss directly without a dialog.
+
+#### Navigation guard
+
+When a card is in edit mode **and** has unsaved changes, leaving the page is also blocked:
+
+- **In-app navigation** (clicking a link, using browser Back/Forward) is intercepted by `useBlocker` (React Router data router). A "Discard changes?" confirmation dialog is shown before the navigation proceeds.
+- **Browser-native navigation** (address-bar entry, tab close, page reload) triggers the browser's own `beforeunload` prompt, which prevents accidental loss without a custom dialog.
+
+Both guards are cleared as soon as the card is saved or the edit is cancelled.
+
+### FR-08 – Real-time Updates
 
 - Changes made by other users are reflected live in the UI without a page reload, using **Server-Sent Events (SSE)**.
 - Events pushed in real time include: card moved, card created/deleted, card attribute changed, new comment added.

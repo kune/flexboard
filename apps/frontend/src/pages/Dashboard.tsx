@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import type { Board } from '@flexboard/shared'
 import { useUiStore } from '@/store/uiStore'
+import { getUser } from '@/lib/auth'
 import { getBoards, createBoard } from '@/lib/api'
 
 const ACCENT_COLORS = ['#2563eb', '#7c3aed', '#16a34a', '#ea580c', '#dc2626', '#0891b2']
@@ -83,11 +85,37 @@ function NewBoardModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+function BoardGrid({ boards, showNew, onNew }: { boards: Board[]; showNew?: boolean; onNew?: () => void }) {
+  return (
+    <div className="boards-grid">
+      {boards.map((board) => (
+        <Link key={board.id} to={`/boards/${board.id}`} className="board-tile">
+          <div className="board-tile-accent" style={{ background: accentFor(board.id) }} />
+          <div className="board-tile-body">
+            <div className="board-tile-title">{board.name}</div>
+            {board.description && (
+              <div className="board-tile-meta">{board.description}</div>
+            )}
+          </div>
+        </Link>
+      ))}
+      {showNew && onNew && (
+        <button className="board-tile-new" onClick={onNew}>
+          <span className="board-tile-new-icon">+</span>
+          New board
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [showNewBoard, setShowNewBoard] = useState(false)
+  const [currentUserSub, setCurrentUserSub] = useState<string | null>(null)
   const setBoardCrumb = useUiStore((s) => s.setBoardCrumb)
 
   useEffect(() => { setBoardCrumb(null, null) }, [setBoardCrumb])
+  useEffect(() => { getUser().then((u) => setCurrentUserSub(u?.profile.sub ?? null)) }, [])
 
   const { data: boards, isLoading, error } = useQuery({
     queryKey: ['boards'],
@@ -96,6 +124,13 @@ export default function Dashboard() {
 
   if (isLoading) return <div className="loading-center">Loading boards…</div>
   if (error) return <div className="loading-center" style={{ color: '#dc2626' }}>Failed to load boards.</div>
+
+  const myBoards = boards?.filter((b) =>
+    b.members.some((m) => m.userId === currentUserSub && m.role === 'owner'),
+  ) ?? []
+  const sharedBoards = boards?.filter((b) =>
+    b.members.some((m) => m.userId === currentUserSub && m.role !== 'owner'),
+  ) ?? []
 
   return (
     <div className="page">
@@ -106,24 +141,14 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div className="boards-grid">
-        {boards?.map((board) => (
-          <Link key={board.id} to={`/boards/${board.id}`} className="board-tile">
-            <div className="board-tile-accent" style={{ background: accentFor(board.id) }} />
-            <div className="board-tile-body">
-              <div className="board-tile-title">{board.name}</div>
-              {board.description && (
-                <div className="board-tile-meta">{board.description}</div>
-              )}
-            </div>
-          </Link>
-        ))}
+      <BoardGrid boards={myBoards} showNew onNew={() => setShowNewBoard(true)} />
 
-        <button className="board-tile-new" onClick={() => setShowNewBoard(true)}>
-          <span className="board-tile-new-icon">+</span>
-          New board
-        </button>
-      </div>
+      {sharedBoards.length > 0 && (
+        <>
+          <div className="page-section-title">Shared With Me</div>
+          <BoardGrid boards={sharedBoards} />
+        </>
+      )}
 
       {showNewBoard && <NewBoardModal onClose={() => setShowNewBoard(false)} />}
     </div>

@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-06 (Dex migration complete; multi-user design decided)  
+> **Last updated:** 2026-04-06 (confirmation dialogs, navigation guard, card view improvements)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -72,7 +72,7 @@
 | ⬜ | Search endpoint (`/api/v1/search`) | Deferred to Phase 4 |
 | ✅ | SSE broker + endpoint (`/api/v1/boards/:id/events`) | `lib/sse.ts` — in-memory registry; `routes/sse.ts` — token via `?token=` (EventSource header limitation); keepalive every 25 s |
 | ⬜ | Input validation via Zod on all endpoints | Currently inline type checks; Zod integration from `packages/shared` deferred |
-| ✅ | Board-level permission checks | `ownerId`/`memberIds` enforced on every route handler |
+| ✅ | Board-level permission checks | Role-based (`owner`/`editor`/`viewer`) via `lib/permissions.ts` helpers; enforced on every route handler |
 | ⬜ | OpenAPI spec generation | Deferred to Phase 5 |
 | ⬜ | Backend unit tests (Vitest) | Deferred to Phase 5 |
 | ⬜ | Backend integration tests | Deferred to Phase 5 |
@@ -92,12 +92,15 @@
 | ✅ | Implement typed API client | `lib/api.ts` — typed fetch wrapper; Bearer token injected from `getAccessToken()` |
 | ✅ | Implement SSE hook (`useBoardSSE`) | `hooks/useBoardSSE.ts` — opens EventSource, invalidates queries on events, exponential-backoff reconnect (3 retries) |
 | ✅ | Dashboard page | `pages/Dashboard.tsx` — board grid; "New Board" modal; accent colours per board |
-| ✅ | Board page (Kanban view) | `pages/Board.tsx` — columns + cards; add-card inline form; add-column modal; delete card |
+| ✅ | Board page (Kanban view) | `pages/Board.tsx` — columns + cards; add-card inline form; add-column modal; card shows number (last 5 hex of ObjectId), labels, priority dot, assignee avatar initials |
 | ✅ | Drag-and-drop (dnd-kit) | `@dnd-kit/core` + `@dnd-kit/sortable`; card reorder within column and move between columns; optimistic local state |
-| ✅ | Card detail view | `pages/CardDetail.tsx` — two-panel layout; Markdown rendering; inline edit with dynamic attribute fields; comments; activity log in sidebar |
+| ✅ | Card detail view | `pages/CardDetail.tsx` — two-panel layout; Markdown rendering; inline edit with dynamic attribute fields; comments; activity log in sidebar; Save/Cancel/Delete in one action row; cancel resets all edit state |
 | ✅ | Card form (create / edit) | Edit form includes all schema-driven attribute fields (`AttributeInput`); inline create in Board for quick add (type + title) |
 | ⬜ | Search page | Deferred to Phase 4 |
-| ✅ | Comment input | Comments section in card detail — post, edit own, delete own; Cmd+Enter to submit |
+| ✅ | Comment input | Comments section in card detail — post, edit own, delete own; Cmd+Enter to submit; confirmation dialog on edit cancel with changes and on delete |
+| ✅ | Confirmation dialogs | `ConfirmDialog` component; guards on: cancel dirty card edit, cancel dirty comment edit, delete card, delete comment, remove board member (FR-07) |
+| ✅ | Navigation guard | `useBlocker` (React Router data router) + `beforeunload` block in-app and browser-native navigation when card has unsaved changes (FR-07) |
+| ✅ | React Router data router migration | `createBrowserRouter` + `RouterProvider`; `AuthGate` uses `<Outlet />`; required for `useBlocker` |
 | ✅ | User menu (nav bar) | `components/Nav.tsx` — logo, breadcrumb, avatar, sign-out dropdown |
 | ⬜ | Frontend unit tests (Vitest + React Testing Library) | Deferred to Phase 5 |
 
@@ -109,12 +112,12 @@
 
 | Status | Task | Notes |
 |--------|------|-------|
-| ⬜ | Board membership — data model | Add `members: [{ userId, role }]` to Board; migrate existing boards to owner = creator |
-| ⬜ | Board membership — backend enforcement | `requireAuth` + role check on every board/column/card route; `403` for insufficient role |
-| ⬜ | Board membership — invite API | `POST /api/v1/boards/:id/members` (owner only); look up user by email from Dex userinfo or existing JWT claims |
-| ⬜ | Board membership — manage API | `PATCH /api/v1/boards/:id/members/:userId` (change role); `DELETE` (remove member); guard against removing last owner |
-| ⬜ | Dashboard — "My Boards" / "Shared With Me" split | Filter boards by whether current user is owner vs editor/viewer |
-| ⬜ | Board settings panel | UI for owner to manage members: list current members with roles, invite by email, change role, remove |
+| ✅ | Board membership — data model | `members: [{ userId, role }]` on Board; creator auto-assigned `owner` role; `users` collection populated on every auth request |
+| ✅ | Board membership — backend enforcement | `lib/permissions.ts` helpers (`canRead`, `canWrite`, `isOwner`); enforced on all board/column/card/comment/activity/SSE routes |
+| ✅ | Board membership — invite API | `POST /api/v1/boards/:id/members` (owner only); lookup by email from `users` collection |
+| ✅ | Board membership — manage API | `PATCH /api/v1/boards/:id/members/:userId` (role change); `DELETE` (remove); last-owner guard on both |
+| ✅ | Dashboard — "My Boards" / "Shared With Me" split | `Dashboard.tsx` splits boards by whether current user's role is `owner` vs `editor`/`viewer` |
+| ✅ | Board settings panel | `BoardMembers.tsx` modal: list members with enriched profiles, invite by email + role, change role dropdown, remove button |
 | ⬜ | User management (Dex config) | Document admin workflow for adding/removing users in `config/dex.yaml` |
 | ⬜ | Card linking | Link cards to each other; display in sidebar |
 | ⬜ | Acceptance criteria checklist rendering | Interactive checkboxes in card detail |

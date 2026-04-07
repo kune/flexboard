@@ -9,6 +9,7 @@ import { cardRoutes } from '@/routes/cards.js'
 import { cardTypeRoutes } from '@/routes/cardtypes.js'
 import { commentRoutes } from '@/routes/comments.js'
 import { activityRoutes } from '@/routes/activity.js'
+import { memberRoutes } from '@/routes/members.js'
 import { sseRoutes } from '@/routes/sse.js'
 
 const app = Fastify({
@@ -49,6 +50,7 @@ await cardRoutes(app)
 await cardTypeRoutes(app)
 await commentRoutes(app)
 await activityRoutes(app)
+await memberRoutes(app)
 await sseRoutes(app)
 
 export default app
