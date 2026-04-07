@@ -55,11 +55,12 @@ interface CommentsSectionProps {
   cardId: string
   currentSub: string
   nameMap: Map<string, string>
+  draft: string
+  onDraftChange: (v: string) => void
 }
 
-function CommentsSection({ boardId, cardId, currentSub, nameMap }: CommentsSectionProps) {
+function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftChange }: CommentsSectionProps) {
   const qc = useQueryClient()
-  const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editBody, setEditBody] = useState('')
   const [editOriginalBody, setEditOriginalBody] = useState('')
@@ -75,7 +76,7 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap }: CommentsSecti
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['comments', boardId, cardId] })
       qc.invalidateQueries({ queryKey: ['activity', boardId, cardId] })
-      setDraft('')
+      onDraftChange('')
     },
   })
 
@@ -189,7 +190,7 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap }: CommentsSecti
           <div className="comment-input-box">
             <textarea
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => onDraftChange(e.target.value)}
               placeholder="Add a comment…"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && draft.trim()) {
@@ -266,6 +267,7 @@ export default function CardDetail() {
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editAttrs, setEditAttrs] = useState<Record<string, unknown>>({})
+  const [commentDraft, setCommentDraft] = useState('')
   const [confirm, setConfirm] = useState<{ message: string; detail?: string; danger?: boolean; confirmLabel?: string; onConfirm: () => void } | null>(null)
 
   const { data: board } = useQuery({
@@ -373,11 +375,11 @@ export default function CardDetail() {
   const markdownFields = schemaFields.filter((f) => f.type === 'markdown')
 
   // Dirty check — safe to compute before early returns because !!card guards it
-  const isDirty = !!card && editing && (
+  const isDirty = (!!card && editing && (
     editTitle !== card.title ||
     editDescription !== (card.description ?? '') ||
     JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {})
-  )
+  )) || commentDraft.trim() !== ''
 
   // Block in-app navigation (React Router links, browser back/forward within SPA)
   const blocker = useBlocker(isDirty)
@@ -534,7 +536,7 @@ export default function CardDetail() {
           </>
         )}
 
-        <CommentsSection boardId={boardId!} cardId={cardId!} currentSub={currentSub} nameMap={nameMap} />
+        <CommentsSection boardId={boardId!} cardId={cardId!} currentSub={currentSub} nameMap={nameMap} draft={commentDraft} onDraftChange={setCommentDraft} />
       </div>
 
       {/* ── Sidebar ── */}
@@ -618,7 +620,7 @@ export default function CardDetail() {
     {blocker.state === 'blocked' && (
       <ConfirmDialog
         message="Discard changes?"
-        detail="You have unsaved edits. Leaving this page will discard them."
+        detail="You have unsaved changes. Leaving this page will discard them."
         confirmLabel="Leave"
         danger
         onConfirm={() => blocker.proceed()}

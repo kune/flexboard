@@ -119,7 +119,7 @@ When a card is in edit mode **and** has unsaved changes, leaving the page is als
 - **In-app navigation** (clicking a link, using browser Back/Forward) is intercepted by `useBlocker` (React Router data router). A "Discard changes?" confirmation dialog is shown before the navigation proceeds.
 - **Browser-native navigation** (address-bar entry, tab close, page reload) triggers the browser's own `beforeunload` prompt, which prevents accidental loss without a custom dialog.
 
-Both guards are cleared as soon as the card is saved or the edit is cancelled.
+Both guards apply whenever the card is in dirty edit mode **or** a comment draft has been typed but not yet posted. They are cleared as soon as the card is saved, the edit is cancelled, or the comment is submitted.
 
 ### FR-08 – Real-time Updates
 
