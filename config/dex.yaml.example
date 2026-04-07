@@ -1,4 +1,14 @@
-issuer: http://localhost/dex
+# Dex OIDC configuration template.
+#
+# For local development or VM deployment without running init.sh:
+#   cp config/dex.yaml.example config/dex.yaml
+#
+# ${FLEXBOARD_BASE_URL} is expanded by Dex at startup from the environment
+# variable set in docker-compose.yml / docker-compose.prod.yml.
+#
+# All test accounts below use the password: Test1234!
+
+issuer: ${FLEXBOARD_BASE_URL}/dex
 
 storage:
   type: memory
@@ -13,14 +23,38 @@ staticClients:
   - id: flexboard-web
     name: Flexboard Web
     redirectURIs:
-      - http://localhost/auth/callback
+      - ${FLEXBOARD_BASE_URL}/auth/callback
     public: true
 
 enablePasswordDB: true
 
 staticPasswords:
   - email: admin@flexboard.localhost
-    # Generate with: python3 -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt(10)).decode())"
-    hash: "$2a$10$examplehashreplacethiswithreal"
+    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
     username: admin
     userID: "admin-000001"
+
+  - email: alice@flexboard.localhost
+    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
+    username: alice
+    userID: "user-000002"
+
+  - email: bob@flexboard.localhost
+    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
+    username: bob
+    userID: "user-000003"
+
+  - email: carol@flexboard.localhost
+    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
+    username: carol
+    userID: "user-000004"
+
+  - email: dave@flexboard.localhost
+    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
+    username: dave
+    userID: "user-000005"
+
+  - email: eve@flexboard.localhost
+    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
+    username: eve
+    userID: "user-000006"

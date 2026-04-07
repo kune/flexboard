@@ -6,11 +6,10 @@
 #   config/dex.yaml  — Dex static-password configuration
 #                      (copy from repo or generate with scripts/init.sh)
 #
-# Note: The frontend SPA has VITE_OIDC_AUTHORITY=http://localhost/dex baked
-# in at build time. Access the app through an SSH tunnel so the browser
-# reaches it via localhost:
-#   ssh -L 80:localhost:80 user@<vm-ip>
-# Then open http://localhost in the browser.
+# Set FLEXBOARD_BASE_URL to the URL the browser uses to reach the app.
+# Defaults to http://localhost. Examples:
+#   FLEXBOARD_BASE_URL=http://192.168.1.100   docker compose -f docker-compose.prod.yml up -d
+#   FLEXBOARD_BASE_URL=https://flexboard.example.com  docker compose -f docker-compose.prod.yml up -d
 
 name: flexboard
 
@@ -32,8 +31,8 @@ services:
       PORT: 3000
       HOST: 0.0.0.0
       MONGO_URI: mongodb://mongodb:27017/flexboard
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
-      DEX_ISSUER: ${DEX_ISSUER:-http://localhost/dex}
+      CORS_ORIGIN: ${FLEXBOARD_BASE_URL:-http://localhost}
+      DEX_ISSUER: ${FLEXBOARD_BASE_URL:-http://localhost}/dex
       DEX_JWKS_URL: http://dex:5556/dex/keys
     depends_on:
       mongodb:
@@ -61,6 +60,8 @@ services:
   dex:
     image: ghcr.io/dexidp/dex:v2.41.1
     command: dex serve /etc/dex/config.yaml
+    environment:
+      FLEXBOARD_BASE_URL: ${FLEXBOARD_BASE_URL:-http://localhost}
     volumes:
       - ./config/dex.yaml:/etc/dex/config.yaml:ro
     restart: unless-stopped

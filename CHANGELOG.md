@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - `docker-compose.prod.yml` for deploying published Docker Hub images without building from source
+- `config/dex.yaml.example` — tracked template with all test accounts (password `Test1234!`) and `${FLEXBOARD_BASE_URL}` placeholders; copy to `config/dex.yaml` for VM/CI deployments without running `init.sh`
+
+### Changed
+- Frontend OIDC authority now derived from `window.location.origin` at runtime — the same Docker image works under any hostname or IP without rebuild
+- Single `FLEXBOARD_BASE_URL` env var (default `http://localhost`) now controls Dex issuer, Dex redirect URI, backend CORS origin, and backend JWT issuer validation
+- `config/dex.yaml` uses `${FLEXBOARD_BASE_URL}` substitution (native Dex feature) for issuer and redirectURIs
+- `scripts/init.sh` generates `dex.yaml` with `${FLEXBOARD_BASE_URL}` placeholders instead of hardcoded localhost URLs
 
 ## [0.1.0] - 2026-04-07
 

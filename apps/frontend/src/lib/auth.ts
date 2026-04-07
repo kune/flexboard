@@ -1,6 +1,9 @@
 import { UserManager, WebStorageStateStore, type User } from 'oidc-client-ts'
 
-const OIDC_AUTHORITY = import.meta.env.VITE_OIDC_AUTHORITY ?? 'http://localhost/dex'
+// Derive the OIDC authority from the current origin so the same Docker image
+// works under any hostname/IP without rebuild. Nginx always proxies /dex/ to
+// the internal Dex container, so this is always correct.
+const OIDC_AUTHORITY = `${window.location.origin}/dex`
 const CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID ?? 'flexboard-web'
 
 export const userManager = new UserManager({
