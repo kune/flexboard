@@ -191,7 +191,10 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftC
       <div className="comment-input-wrap">
         <div className="comment-avatar">{initials(nameMap.get(currentSub) ?? currentSub)}</div>
         <div style={{ flex: 1 }}>
-          <div className="comment-input-box">
+          <div
+            className="comment-input-box"
+            style={draft.trim() ? { boxShadow: '0 0 0 2px #3b82f6' } : {}}
+          >
             <textarea
               value={draft}
               onChange={(e) => onDraftChange(e.target.value)}
@@ -204,6 +207,9 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftC
               }}
             />
             <div className="comment-input-footer">
+              {draft.trim() && (
+                <span style={{ marginRight: 'auto', color: '#3b82f6', fontSize: 13 }}>✎</span>
+              )}
               <button
                 className="btn btn-primary btn-sm"
                 onClick={() => addMutation.mutate()}
