@@ -1,15 +1,13 @@
 # Production deployment using published Docker Hub images.
 # Usage:
+#   export FLEXBOARD_BASE_URL=http://192.168.1.100   # URL the browser uses to reach the app
+#   sed "s|\${FLEXBOARD_BASE_URL}|$FLEXBOARD_BASE_URL|g" config/dex.yaml.example > config/dex.yaml
 #   docker compose -f docker-compose.prod.yml up -d
 #
-# Required on the host:
-#   config/dex.yaml  — Dex static-password configuration
-#                      (copy from repo or generate with scripts/init.sh)
-#
-# Set FLEXBOARD_BASE_URL to the URL the browser uses to reach the app.
-# Defaults to http://localhost. Examples:
-#   FLEXBOARD_BASE_URL=http://192.168.1.100   docker compose -f docker-compose.prod.yml up -d
-#   FLEXBOARD_BASE_URL=https://flexboard.example.com  docker compose -f docker-compose.prod.yml up -d
+# config/dex.yaml must be generated from config/dex.yaml.example (see above) or
+# from scripts/init.sh (which lets you choose an admin password).
+# The sed substitution is needed because Dex does not expand shell variables
+# in its config file — the replacement must happen on the host before mounting.
 
 name: flexboard
 
@@ -60,8 +58,6 @@ services:
   dex:
     image: ghcr.io/dexidp/dex:v2.41.1
     command: dex serve /etc/dex/config.yaml
-    environment:
-      FLEXBOARD_BASE_URL: ${FLEXBOARD_BASE_URL:-http://localhost}
     volumes:
       - ./config/dex.yaml:/etc/dex/config.yaml:ro
     restart: unless-stopped

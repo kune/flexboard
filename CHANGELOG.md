@@ -11,9 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Frontend OIDC authority now derived from `window.location.origin` at runtime — the same Docker image works under any hostname or IP without rebuild
-- Single `FLEXBOARD_BASE_URL` env var (default `http://localhost`) now controls Dex issuer, Dex redirect URI, backend CORS origin, and backend JWT issuer validation
-- `config/dex.yaml` uses `${FLEXBOARD_BASE_URL}` substitution (native Dex feature) for issuer and redirectURIs
-- `scripts/init.sh` generates `dex.yaml` with `${FLEXBOARD_BASE_URL}` placeholders instead of hardcoded localhost URLs
+- `FLEXBOARD_BASE_URL` env var now controls backend `CORS_ORIGIN` and `DEX_ISSUER` via Docker Compose substitution
+- `config/dex.yaml.example` uses `${FLEXBOARD_BASE_URL}` placeholders; deployment generates `config/dex.yaml` via `sed "s|\${FLEXBOARD_BASE_URL}|$FLEXBOARD_BASE_URL|g" config/dex.yaml.example > config/dex.yaml` (Dex does not expand shell variables from its environment)
+- `scripts/init.sh` generates `dex.yaml` with `${FLEXBOARD_BASE_URL}` placeholders (for subsequent `sed` substitution) instead of hardcoded localhost URLs
 
 ## [0.1.0] - 2026-04-07
 

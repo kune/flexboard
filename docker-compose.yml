@@ -51,8 +51,6 @@ services:
   dex:
     image: ghcr.io/dexidp/dex:v2.41.1
     command: dex serve /etc/dex/config.yaml
-    environment:
-      FLEXBOARD_BASE_URL: ${FLEXBOARD_BASE_URL:-http://localhost}
     volumes:
       - ./config/dex.yaml:/etc/dex/config.yaml:ro
     ports:
