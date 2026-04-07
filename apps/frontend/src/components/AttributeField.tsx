@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 import type { AttributeFieldSchema } from '@flexboard/shared'
 import type { BoardMemberEnriched } from '@flexboard/shared'
+import MarkdownEditor from '@/components/MarkdownEditor'
 
 function labelFor(key: string): string {
   return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -145,7 +148,9 @@ export function AttributeValue({ field, value, nameMap }: AttributeValueProps) {
   if (field.type === 'markdown') {
     return (
       <div className="prose" style={{ fontSize: 12, textAlign: 'left' }}>
-        <ReactMarkdown>{String(value)}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+          {String(value)}
+        </ReactMarkdown>
       </div>
     )
   }
@@ -258,12 +263,10 @@ export function AttributeInput({ field, value, onChange, members }: AttributeInp
 
   if (field.type === 'markdown') {
     return (
-      <textarea
-        className="form-input form-textarea"
-        rows={4}
+      <MarkdownEditor
         value={strVal}
-        onChange={(e) => onChange(field.key, e.target.value || undefined)}
-        placeholder={`${labelFor(field.key)} (Markdown)`}
+        onChange={(v) => onChange(field.key, v || undefined)}
+        placeholder={labelFor(field.key)}
       />
     )
   }

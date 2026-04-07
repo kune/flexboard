@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 import type { AttributeFieldSchema } from '@flexboard/shared'
 import {
   getBoard, getCard, updateCard, deleteCard, getColumns, getCardTypes,
@@ -12,6 +14,7 @@ import { useUiStore } from '@/store/uiStore'
 import { useBoardSSE } from '@/hooks/useBoardSSE'
 import { AttributeRow, AttributeInput, AttributeValue } from '@/components/AttributeField'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import MarkdownEditor from '@/components/MarkdownEditor'
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -530,14 +533,14 @@ export default function CardDetail() {
 
             <div className="form-group">
               <label className="form-label">
-                Description (Markdown){descDirty && <span style={{ marginLeft: 5, color: '#3b82f6', fontWeight: 400, fontSize: 13 }}>✎</span>}
+                Description{descDirty && <span style={{ marginLeft: 5, color: '#3b82f6', fontWeight: 400, fontSize: 13 }}>✎</span>}
               </label>
               <div style={descDirty ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6' } : {}}>
-                <textarea
-                  className="form-input form-textarea"
+                <MarkdownEditor
                   value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  rows={8}
+                  onChange={setEditDescription}
+                  rows={10}
+                  placeholder="Description…"
                 />
               </div>
             </div>
@@ -572,7 +575,9 @@ export default function CardDetail() {
               <div className="detail-section">
                 <div className="detail-section-label">Description</div>
                 <div className="prose">
-                  <ReactMarkdown>{card.description}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                    {card.description}
+                  </ReactMarkdown>
                 </div>
               </div>
             ) : (
@@ -592,7 +597,9 @@ export default function CardDetail() {
                     {f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                   </div>
                   <div className="prose">
-                    <ReactMarkdown>{String(val)}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                      {String(val)}
+                    </ReactMarkdown>
                   </div>
                 </div>
               )
