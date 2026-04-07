@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
@@ -61,14 +61,33 @@ interface CommentsSectionProps {
   nameMap: Map<string, string>
   draft: string
   onDraftChange: (v: string) => void
+  onEditDirtyChange: (dirty: boolean) => void
+  cancelEditSeq: number
 }
 
-function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftChange }: CommentsSectionProps) {
+function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftChange, onEditDirtyChange, cancelEditSeq }: CommentsSectionProps) {
   const qc = useQueryClient()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editBody, setEditBody] = useState('')
   const [editOriginalBody, setEditOriginalBody] = useState('')
   const [confirm, setConfirm] = useState<{ message: string; detail?: string; onConfirm: () => void } | null>(null)
+
+  const editDirty = editingId !== null && editBody.trim() !== editOriginalBody.trim()
+
+  useEffect(() => {
+    onEditDirtyChange(editDirty)
+  }, [editDirty, onEditDirtyChange])
+
+  // Parent signals "cancel any open edit" by incrementing cancelEditSeq
+  const prevCancelSeq = useRef(cancelEditSeq)
+  useEffect(() => {
+    if (cancelEditSeq !== prevCancelSeq.current) {
+      prevCancelSeq.current = cancelEditSeq
+      setEditingId(null)
+      setEditBody('')
+      setEditOriginalBody('')
+    }
+  }, [cancelEditSeq])
 
   const { data: comments = [] } = useQuery({
     queryKey: ['comments', boardId, cardId],
@@ -142,15 +161,17 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftC
 
             {editingId === c.id ? (
               <>
-                <textarea
-                  className="form-input form-textarea"
-                  value={editBody}
-                  onChange={(e) => setEditBody(e.target.value)}
-                  rows={3}
-                  style={{ fontSize: 13, marginBottom: 6 }}
-                  autoFocus
-                />
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={editDirty ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6', marginBottom: 6 } : { marginBottom: 6 }}>
+                  <textarea
+                    className="form-input form-textarea"
+                    value={editBody}
+                    onChange={(e) => setEditBody(e.target.value)}
+                    rows={3}
+                    style={{ fontSize: 13, marginBottom: 0 }}
+                    autoFocus
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                   <button
                     className="btn btn-primary btn-sm"
                     onClick={() => editMutation.mutate(c.id)}
@@ -161,6 +182,7 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftC
                   <button className="btn btn-ghost btn-sm" onClick={cancelEdit}>
                     Cancel
                   </button>
+                  {editDirty && <span style={{ color: '#3b82f6', fontSize: 13, marginLeft: 2 }}>✎</span>}
                 </div>
               </>
             ) : (
@@ -278,6 +300,8 @@ export default function CardDetail() {
   const [editDescription, setEditDescription] = useState('')
   const [editAttrs, setEditAttrs] = useState<Record<string, unknown>>({})
   const [commentDraft, setCommentDraft] = useState('')
+  const [commentEditDirty, setCommentEditDirty] = useState(false)
+  const [commentEditCancelSeq, setCommentEditCancelSeq] = useState(0)
   const [confirm, setConfirm] = useState<{ message: string; detail?: string; danger?: boolean; confirmLabel?: string; onConfirm: () => void } | null>(null)
 
   const { data: board } = useQuery({
@@ -389,7 +413,7 @@ export default function CardDetail() {
     editTitle !== card.title ||
     editDescription !== (card.description ?? '') ||
     JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {})
-  )) || commentDraft.trim() !== ''
+  )) || commentDraft.trim() !== '' || commentEditDirty
 
   // Block in-app navigation (React Router links, browser back/forward within SPA)
   const blocker = useBlocker(isDirty)
@@ -576,7 +600,7 @@ export default function CardDetail() {
           </>
         )}
 
-        <CommentsSection boardId={boardId!} cardId={cardId!} currentSub={currentSub} nameMap={nameMap} draft={commentDraft} onDraftChange={setCommentDraft} />
+        <CommentsSection boardId={boardId!} cardId={cardId!} currentSub={currentSub} nameMap={nameMap} draft={commentDraft} onDraftChange={setCommentDraft} onEditDirtyChange={setCommentEditDirty} cancelEditSeq={commentEditCancelSeq} />
         {isDirty && <div style={{ height: 52 }} />}
       </div>
 
@@ -658,11 +682,13 @@ export default function CardDetail() {
       <div className="unsaved-bar">
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ color: '#60a5fa', fontSize: 15 }}>✎</span>
-          {isCardDirty && commentDraft.trim()
-            ? 'Unsaved card changes and a comment draft.'
+          {isCardDirty && (commentDraft.trim() || commentEditDirty)
+            ? 'Unsaved card changes and a comment.'
             : isCardDirty
               ? 'This card has unsaved changes.'
-              : 'You have an unsaved comment draft.'}
+              : commentEditDirty
+                ? 'You have unsaved changes to a comment.'
+                : 'You have an unsaved comment draft.'}
         </span>
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           {isCardDirty && (
@@ -677,7 +703,11 @@ export default function CardDetail() {
           <button
             className="btn btn-ghost btn-sm"
             style={{ color: '#94a3b8' }}
-            onClick={() => { if (isCardDirty) resetEdit(); setCommentDraft('') }}
+            onClick={() => {
+              if (isCardDirty) resetEdit()
+              setCommentDraft('')
+              if (commentEditDirty) setCommentEditCancelSeq((s) => s + 1)
+            }}
           >
             Discard
           </button>
