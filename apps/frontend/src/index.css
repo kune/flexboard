@@ -523,6 +523,25 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 }
 .form-select:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
 
+/* ─── Unsaved-changes indicators ─────────────────────────── */
+
+.unsaved-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 -2px 12px rgba(0,0,0,.2);
+  font-size: 13px;
+}
+
 /* ─── Utilities ───────────────────────────────────────────── */
 
 .flex { display: flex; }

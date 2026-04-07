@@ -48,6 +48,10 @@ function initials(name: string): string {
   return name.slice(0, 2).toUpperCase()
 }
 
+function isFieldDirty(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null)
+}
+
 // ── Comments section ──────────────────────────────────────
 
 interface CommentsSectionProps {
@@ -392,8 +396,24 @@ export default function CardDetail() {
     return () => window.removeEventListener('beforeunload', handler)
   }, [isDirty])
 
+  // Dirty indicator in browser tab title
+  useEffect(() => {
+    const title = card?.title ?? 'Card'
+    document.title = isDirty ? `• ${title} – Flexboard` : `${title} – Flexboard`
+    return () => { document.title = 'Flexboard' }
+  }, [isDirty, card?.title])
+
   if (isLoading) return <div className="loading-center">Loading card…</div>
   if (!card) return <div className="loading-center">Card not found.</div>
+
+  const isCardDirty = editing && (
+    editTitle !== card.title ||
+    editDescription !== (card.description ?? '') ||
+    JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {})
+  )
+  const titleDirty = editing && editTitle !== card.title
+  const descDirty  = editing && editDescription !== (card.description ?? '')
+  const attrDirty  = (key: string) => editing && isFieldDirty(editAttrs[key], card.attributes?.[key])
 
   const resetEdit = () => {
     setEditTitle(card.title)
@@ -465,39 +485,53 @@ export default function CardDetail() {
         {editing ? (
           <>
             <div className="form-group" style={{ marginTop: 10 }}>
-              <label className="form-label">Title</label>
-              <input
-                className="form-input"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                style={{ fontSize: 18, fontWeight: 700 }}
-              />
+              <label className="form-label">
+                Title{titleDirty && <span style={{ marginLeft: 5, color: '#3b82f6', fontWeight: 400, fontSize: 13 }}>✎</span>}
+              </label>
+              <div style={titleDirty ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6' } : {}}>
+                <input
+                  className="form-input"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  style={{ fontSize: 18, fontWeight: 700 }}
+                />
+              </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Description (Markdown)</label>
-              <textarea
-                className="form-input form-textarea"
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                rows={8}
-              />
-            </div>
-
-            {markdownFields.map((f) => (
-              <div key={f.key} className="form-group">
-                <label className="form-label">
-                  {f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                  {f.required && <span className="form-label-req"> *</span>}
-                </label>
-                <AttributeInput
-                  field={f}
-                  value={editAttrs[f.key]}
-                  onChange={handleAttrChange}
-                  members={members}
+              <label className="form-label">
+                Description (Markdown){descDirty && <span style={{ marginLeft: 5, color: '#3b82f6', fontWeight: 400, fontSize: 13 }}>✎</span>}
+              </label>
+              <div style={descDirty ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6' } : {}}>
+                <textarea
+                  className="form-input form-textarea"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={8}
                 />
               </div>
-            ))}
+            </div>
+
+            {markdownFields.map((f) => {
+              const dirty = attrDirty(f.key)
+              return (
+                <div key={f.key} className="form-group">
+                  <label className="form-label">
+                    {f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                    {f.required && <span className="form-label-req"> *</span>}
+                    {dirty && <span style={{ marginLeft: 5, color: '#3b82f6', fontWeight: 400, fontSize: 13 }}>✎</span>}
+                  </label>
+                  <div style={dirty ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6' } : {}}>
+                    <AttributeInput
+                      field={f}
+                      value={editAttrs[f.key]}
+                      onChange={handleAttrChange}
+                      members={members}
+                    />
+                  </div>
+                </div>
+              )
+            })}
 
           </>
         ) : (
@@ -537,6 +571,7 @@ export default function CardDetail() {
         )}
 
         <CommentsSection boardId={boardId!} cardId={cardId!} currentSub={currentSub} nameMap={nameMap} draft={commentDraft} onDraftChange={setCommentDraft} />
+        {isDirty && <div style={{ height: 52 }} />}
       </div>
 
       {/* ── Sidebar ── */}
@@ -580,20 +615,26 @@ export default function CardDetail() {
             {editing ? (
               schemaFields
                 .filter((f) => f.type !== 'markdown')
-                .map((f) => (
-                  <div key={f.key} style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>
-                      {f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                      {f.required && <span style={{ color: '#ef4444' }}> *</span>}
+                .map((f) => {
+                  const dirty = attrDirty(f.key)
+                  return (
+                    <div key={f.key} style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>
+                        {f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                        {f.required && <span style={{ color: '#ef4444' }}> *</span>}
+                        {dirty && <span style={{ marginLeft: 5, color: '#3b82f6' }}>✎</span>}
+                      </div>
+                      <div style={dirty ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6' } : {}}>
+                        <AttributeInput
+                          field={f}
+                          value={editAttrs[f.key]}
+                          onChange={handleAttrChange}
+                          members={members}
+                        />
+                      </div>
                     </div>
-                    <AttributeInput
-                      field={f}
-                      value={editAttrs[f.key]}
-                      onChange={handleAttrChange}
-                      members={members}
-                    />
-                  </div>
-                ))
+                  )
+                })
             ) : (
               schemaFields.map((f) => (
                 <AttributeRow key={f.key} field={f} value={card.attributes?.[f.key]} nameMap={nameMap} />
@@ -603,8 +644,40 @@ export default function CardDetail() {
         )}
 
         <ActivitySection boardId={boardId!} cardId={cardId!} />
+        {isDirty && <div style={{ height: 52 }} />}
       </div>
     </div>
+
+    {isDirty && (
+      <div className="unsaved-bar">
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: '#60a5fa', fontSize: 15 }}>✎</span>
+          {isCardDirty && commentDraft.trim()
+            ? 'Unsaved card changes and a comment draft.'
+            : isCardDirty
+              ? 'This card has unsaved changes.'
+              : 'You have an unsaved comment draft.'}
+        </span>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+          {isCardDirty && (
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => saveMutation.mutate()}
+              disabled={!editTitle.trim() || saveMutation.isPending}
+            >
+              {saveMutation.isPending ? 'Saving…' : 'Save'}
+            </button>
+          )}
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ color: '#94a3b8' }}
+            onClick={() => { if (isCardDirty) resetEdit(); setCommentDraft('') }}
+          >
+            Discard
+          </button>
+        </div>
+      </div>
+    )}
 
     {confirm && (
       <ConfirmDialog
