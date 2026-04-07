@@ -1,6 +1,5 @@
 import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
+import { remarkPlugins, rehypePlugins } from '@/lib/markdown'
 
 interface Props {
   value: string
@@ -29,7 +28,7 @@ export default function MarkdownEditor({ value, onChange, rows = 6, placeholder 
         <div className="md-editor-pane-label">Preview</div>
         <div className="md-editor-preview prose" style={{ minHeight }}>
           {value.trim() ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+            <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
               {value}
             </ReactMarkdown>
           ) : (

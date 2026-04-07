@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
+import { remarkPlugins, rehypePlugins } from '@/lib/markdown'
 import type { AttributeFieldSchema } from '@flexboard/shared'
 import {
   getBoard, getCard, updateCard, deleteCard, getColumns, getCardTypes,
@@ -575,7 +574,7 @@ export default function CardDetail() {
               <div className="detail-section">
                 <div className="detail-section-label">Description</div>
                 <div className="prose">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                  <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
                     {card.description}
                   </ReactMarkdown>
                 </div>
@@ -597,7 +596,7 @@ export default function CardDetail() {
                     {f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                   </div>
                   <div className="prose">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                    <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
                       {String(val)}
                     </ReactMarkdown>
                   </div>

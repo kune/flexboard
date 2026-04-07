@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
+import { remarkPlugins, rehypePlugins } from '@/lib/markdown'
 import type { AttributeFieldSchema } from '@flexboard/shared'
 import type { BoardMemberEnriched } from '@flexboard/shared'
 import MarkdownEditor from '@/components/MarkdownEditor'
@@ -148,7 +147,7 @@ export function AttributeValue({ field, value, nameMap }: AttributeValueProps) {
   if (field.type === 'markdown') {
     return (
       <div className="prose" style={{ fontSize: 12, textAlign: 'left' }}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+        <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
           {String(value)}
         </ReactMarkdown>
       </div>
