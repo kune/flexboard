@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-06 (confirmation dialogs, navigation guard, card view improvements)  
+> **Last updated:** 2026-04-08 (diagrams and drawings requirement added)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -129,6 +129,11 @@
 | ⬜ | Additional themes | At least one additional theme beyond light/dark |
 | ⬜ | Error states & loading skeletons | All data-fetching surfaces |
 | ⬜ | Empty states | New board, empty column, no search results |
+| ⬜ | Mermaid diagrams in Markdown | Add `rehype-mermaid` (or equivalent) to the markdown plugin pipeline; render `\`\`\`mermaid` fences as diagrams in all Markdown fields (FR-09) |
+| ⬜ | Drawing canvas — shared types | Add `'drawing'` to `AttributeType` in `packages/shared`; define `DrawingData` type (Excalidraw JSON envelope + optional SVG cache) |
+| ⬜ | Drawing canvas — backend | Store drawing JSON in card `attributes`; no new endpoint needed; include drawing fields in activity log change detection |
+| ⬜ | Drawing canvas — `DrawingField` component | Read-only SVG preview; edit mode opens embedded Excalidraw canvas; integrates with card dirty-state and navigation guard (FR-09) |
+| ⬜ | Drawing canvas — card type schema | Add `drawing`-type attribute to relevant card type schemas in `config/card-types.yaml` |
 
 ---
 

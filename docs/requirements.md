@@ -1,9 +1,9 @@
 # Flexboard – Requirements Document
 
 > **Name:** Flexboard  
-> **Version:** 0.2  
-> **Date:** 2026-04-06  
-> **Status:** Updated — multi-user & role-based access decided
+> **Version:** 0.3  
+> **Date:** 2026-04-08  
+> **Status:** Updated — diagrams and drawings requirement added (FR-09)
 
 ---
 
@@ -121,6 +121,29 @@ When a card is in edit mode **and** has unsaved changes, leaving the page is als
 
 Both guards apply whenever the card is in dirty edit mode **or** a comment draft has been typed but not yet posted. They are cleared as soon as the card is saved, the edit is cancelled, or the comment is submitted.
 
+### FR-09 – Diagrams and Drawings
+
+Cards support two complementary ways to embed visual content:
+
+#### Text-based diagrams (Mermaid)
+
+- Any Markdown field — card description, attribute fields of type `markdown`, and comments — supports Mermaid diagram code blocks.
+- Content fenced with ` ```mermaid ` is rendered as a diagram in view mode rather than as plain text.
+- Supported diagram types include at minimum: flowcharts, sequence diagrams, class diagrams, entity-relationship diagrams, and Gantt charts (the standard Mermaid feature set).
+- In edit mode the code block is displayed as editable text; the rendered diagram is visible in the live preview pane.
+- Diagrams are stored as part of the Markdown text — no separate data model or API changes are required.
+
+#### Freehand drawing canvas
+
+- Cards may carry one or more **freehand drawings** — whiteboard-style sketches created with a vector drawing tool (shapes, arrows, free lines, text labels).
+- Drawings are attached to a card as a dedicated attribute field of the new type `drawing`.
+- Card type schemas may include `drawing`-typed attributes (e.g. `{ key: "diagram", type: "drawing" }`); existing card types may gain them without migration.
+- In **view mode** the drawing is rendered as a static SVG preview inline in the card detail.
+- In **edit mode** the drawing opens in a full interactive canvas embedded in the page. Changes are discarded or saved with the rest of the card edit.
+- `editor` and `owner` roles may create, modify, and delete drawings; `viewer` role has read-only access.
+- Drawings are stored as structured JSON (Excalidraw open format) in the card's `attributes` map. An SVG export may optionally be cached for fast preview rendering.
+- The unsaved-changes guard (FR-07) extends to drawing edits: navigating away from an edited drawing triggers the same "Discard changes?" confirmation as other dirty fields.
+
 ### FR-08 – Real-time Updates
 
 - Changes made by other users are reflected live in the UI without a page reload, using **Server-Sent Events (SSE)**.
@@ -215,8 +238,9 @@ Cards are stored as JSON documents with a fixed "envelope" and a flexible `attri
 ### TR-02 – Frontend
 
 - Framework: **React** with TypeScript.
-- Markdown rendering: `react-markdown` with syntax highlighting via `rehype-highlight` / `highlight.js`.
+- Markdown rendering: `react-markdown` with syntax highlighting via `rehype-highlight` / `highlight.js`; Mermaid diagrams via `rehype-mermaid` or equivalent.
 - Markdown editing: editor component with live preview (e.g. `@uiw/react-md-editor`, `tiptap` with Markdown extension, or `CodeMirror`).
+- Drawing canvas: **Excalidraw** (`@excalidraw/excalidraw`) embedded React component for freehand vector drawing; open JSON storage format with SVG export.
 - State management: **Zustand** for local UI state; server state via **TanStack Query** (React Query).
 - UI component library: **shadcn/ui** (built on Radix UI).
 - Drag-and-drop for cards and columns: **dnd-kit**.
