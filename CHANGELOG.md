@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- FR-09 (Diagrams and Drawings): Mermaid text-based diagrams in all Markdown fields; Excalidraw freehand drawing canvas as new `drawing` attribute type — specified in `docs/requirements.md`, planned in `docs/planning.md`, ADR-13 added to `docs/architecture.md`
+- FR-09 (Diagrams and Drawings): Mermaid text-based diagrams in all Markdown fields; Excalidraw inline in ` ```excalidraw ` ` fences (static SVG view, click-to-edit modal, JSON serialised back into Markdown source); Excalidraw as a `drawing` attribute type — specified in `docs/requirements.md`, planned in `docs/planning.md`, ADR-13 in `docs/architecture.md`
 - `docker-compose.prod.yml` for deploying published Docker Hub images without building from source
 - `config/dex.yaml.example` — tracked template with all test accounts (password `Test1234!`) and `${FLEXBOARD_BASE_URL}` placeholders; copy to `config/dex.yaml` for VM/CI deployments without running `init.sh`
 - `docker-compose.tls.yml` — compose overlay that adds HTTPS via a self-signed cert (required for OIDC on non-localhost IPs; `crypto.subtle` is only available in secure contexts)

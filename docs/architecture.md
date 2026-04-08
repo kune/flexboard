@@ -1,8 +1,8 @@
 # Flexboard – Architecture Document
 
-> **Version:** 0.6  
+> **Version:** 0.7  
 > **Date:** 2026-04-08  
-> **Status:** Updated — diagrams and drawings (FR-09): Mermaid + Excalidraw; ADR-13 added
+> **Status:** Updated — FR-09 refined: Excalidraw inline code block approach added; ADR-13 updated
 
 ---
 
@@ -605,7 +605,7 @@ The in-memory SSE broker works correctly for a single backend instance. If horiz
 | `number` | number | Number input |
 | `date` | ISO 8601 string | Date picker |
 | `enum` | string | Select dropdown |
-| `markdown` | string (Markdown) | Markdown editor with live preview; Mermaid fences rendered as diagrams |
+| `markdown` | string (Markdown) | Markdown editor with live preview; Mermaid fences rendered as diagrams; ` ```excalidraw ` fences rendered as static SVG with click-to-edit modal |
 | `reference` | string (user ID) | User picker |
 | `drawing` | object (`DrawingData`) | Static SVG preview (view mode); embedded Excalidraw canvas (edit mode) |
 
@@ -619,6 +619,12 @@ interface DrawingData {
   svg?: string
 }
 ```
+
+**Inline ` ```excalidraw ` ` rendering** uses a `react-markdown` `components.code` override:
+- Detects `className === 'language-excalidraw'`, parses the JSON from the code block.
+- View mode: calls `exportToSvg()` from `@excalidraw/utils`; injects the SVG node.
+- Edit mode: an "Edit drawing" button opens a modal with `<Excalidraw initialData={parsed}>`. On save, the modal replaces the code block's JSON in the Markdown textarea source.
+- No server-side rendering for the canvas component; `exportToSvg` is browser-only and must run client-side.
 
 ---
 
@@ -789,4 +795,4 @@ No build-time environment variables are required. All OIDC configuration (`autho
 | ADR-10 | Frontend styling | **Plain CSS (`src/index.css`)** | shadcn/ui + Tailwind were the original plan, but the HTML mockups already defined a complete, consistent design system. Transcribing that directly to a single CSS file was faster, removed a large dependency chain, and produced pixel-faithful results. May revisit if component reuse demands grow. |
 | ADR-11 | User management | **Dex static passwords (`config/dex.yaml`)** | Chosen over in-app registration (too much custom work) and external OAuth connectors (GitHub/Google — complicates fully local setup). Static passwords suit a small, known user group managed by an admin. Adding a user requires editing `config/dex.yaml` and restarting the Dex container. Passwords stored as bcrypt hashes. |
 | ADR-12 | SSE authentication | **Access token in `?token=` query param** | The browser's `EventSource` API does not support custom request headers, making the standard `Authorization: Bearer` pattern impossible. Alternatives considered: (1) short-lived SSE-specific tokens — adds complexity; (2) cookies — requires changing the OIDC token storage strategy. Query-param token is the established pattern for SSE auth in single-page apps. The exposure risk is low in a self-hosted deployment over localhost/private network. |
-| ADR-13 | Diagram rendering | **Mermaid (text-based) + Excalidraw (freehand)** | Two distinct needs: structured diagrams (flowcharts, sequence, ER) are best expressed as text so they remain version-control-friendly and fit naturally in Markdown fields; freehand sketches cannot be expressed as text and need a canvas. Mermaid integrates as a rehype plugin with zero new data model. Excalidraw stores open JSON, exports clean SVG, and its React package embeds without an iframe. Alternatives considered for freehand: tldraw (larger bundle, less stable API), draw.io (iframe-only embedding, poor UX integration). |
+| ADR-13 | Diagram rendering | **Mermaid (text-based) + Excalidraw inline + Excalidraw attribute** | Three complementary mechanisms: (1) Mermaid in ` ```mermaid ` fences for structured text diagrams — zero data model changes, version-control-friendly; (2) Excalidraw in ` ```excalidraw ` fences for freehand drawings embedded inside description/comments — data stored inline in the Markdown string, static SVG rendered in view mode, modal canvas for editing; (3) `drawing` attribute type for drawings attached at card level — stored as `DrawingData` JSON in `attributes`, rendered as SVG preview with embedded canvas in edit mode. Obsidian uses a separate-file + transclusion model (not inline code blocks in prose); no off-the-shelf rehype/remark plugin exists for Excalidraw code blocks — the inline renderer is a custom `react-markdown` `components.code` override backed by `exportToSvg` from `@excalidraw/utils`. Alternatives for freehand: tldraw (larger bundle, less stable API), draw.io (iframe-only, poor UX). |

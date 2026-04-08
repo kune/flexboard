@@ -1,9 +1,9 @@
 # Flexboard – Requirements Document
 
 > **Name:** Flexboard  
-> **Version:** 0.3  
+> **Version:** 0.4  
 > **Date:** 2026-04-08  
-> **Status:** Updated — diagrams and drawings requirement added (FR-09)
+> **Status:** Updated — FR-09 refined: Excalidraw inline in Markdown added
 
 ---
 
@@ -133,16 +133,30 @@ Cards support two complementary ways to embed visual content:
 - In edit mode the code block is displayed as editable text; the rendered diagram is visible in the live preview pane.
 - Diagrams are stored as part of the Markdown text — no separate data model or API changes are required.
 
-#### Freehand drawing canvas
+#### Freehand drawing canvas — inline in Markdown
 
-- Cards may carry one or more **freehand drawings** — whiteboard-style sketches created with a vector drawing tool (shapes, arrows, free lines, text labels).
-- Drawings are attached to a card as a dedicated attribute field of the new type `drawing`.
+- Any Markdown field (card description, `markdown`-typed attributes, comments) supports an Excalidraw fenced code block:
+  ````
+  ```excalidraw
+  { "type": "excalidraw", "version": 2, "elements": [...], "appState": {...} }
+  ```
+  ````
+- In **view mode** the code block is replaced by a static SVG rendering of the drawing. A small "Edit" affordance on hover opens the interactive canvas.
+- In **edit mode** (inside the split-pane `MarkdownEditor`) the code block's content is displayed as raw JSON in the textarea pane; the preview pane renders the static SVG. Clicking the SVG opens an Excalidraw canvas in a modal overlay; saving the modal serialises the updated scene JSON back into the code block in the textarea.
+- Multiple ```` ```excalidraw ```` blocks may appear in a single Markdown field, each independently editable.
+- The drawing data (Excalidraw JSON) is stored as part of the Markdown string — no separate data model changes are required for this variant.
+
+#### Freehand drawing canvas — as a card attribute
+
+- Cards may carry one or more **freehand drawings** attached as a dedicated attribute field of the new type `drawing`.
 - Card type schemas may include `drawing`-typed attributes (e.g. `{ key: "diagram", type: "drawing" }`); existing card types may gain them without migration.
 - In **view mode** the drawing is rendered as a static SVG preview inline in the card detail.
-- In **edit mode** the drawing opens in a full interactive canvas embedded in the page. Changes are discarded or saved with the rest of the card edit.
+- In **edit mode** the drawing opens in a full interactive Excalidraw canvas embedded in the page. Changes are discarded or saved with the rest of the card edit.
 - `editor` and `owner` roles may create, modify, and delete drawings; `viewer` role has read-only access.
-- Drawings are stored as structured JSON (Excalidraw open format) in the card's `attributes` map. An SVG export may optionally be cached for fast preview rendering.
+- Drawings are stored as structured JSON (Excalidraw open format) in the card's `attributes` map. An SVG export is cached alongside the JSON for fast view-mode rendering.
 - The unsaved-changes guard (FR-07) extends to drawing edits: navigating away from an edited drawing triggers the same "Discard changes?" confirmation as other dirty fields.
+
+Both embedding styles use the same rendering and editing library (Excalidraw); the difference is where the data lives (inline in the Markdown string vs. in the card attributes map).
 
 ### FR-08 – Real-time Updates
 
