@@ -1,9 +1,9 @@
 # Flexboard – Requirements Document
 
 > **Name:** Flexboard  
-> **Version:** 0.5  
+> **Version:** 0.6  
 > **Date:** 2026-04-09  
-> **Status:** Updated — FR-09 revised: drawings as named card attachments with transclusion
+> **Status:** Updated — FR-10 added: responsive design and touch support
 
 ---
 
@@ -156,6 +156,57 @@ Drawings are stored as **named attachments** on a card, separate from the Markdo
 
 **Unsaved changes:**
 - Opening the drawing editor within a card edit session is tracked as a dirty state; the navigation guard (FR-07) blocks leaving the page until the drawing is saved or the edit is cancelled.
+
+### FR-10 – Responsive Design and Touch Support
+
+The application must be fully usable on a smartphone. No feature is removed or hidden on small screens — the interface adapts its layout and interaction model to the available space and input method.
+
+#### Breakpoints and layout strategy
+
+| Breakpoint | Width | Layout |
+|---|---|---|
+| Mobile | < 640 px | Single-column; stacked panels; touch-optimised tap targets |
+| Tablet | 640 px – 1024 px | Intermediate; some two-column layouts retained |
+| Desktop | ≥ 1024 px | Current multi-column layout unchanged |
+
+The application uses a **mobile-first** CSS approach: base styles target mobile, with `min-width` media queries progressively enhancing for larger screens.
+
+#### Input devices
+
+- All interactive elements have touch targets of at least **44 × 44 px** (per Apple HIG / WCAG 2.5.5).
+- Hover-only interactions (e.g. hover-reveal buttons) are replaced by always-visible or tap-to-reveal alternatives on touch devices.
+- Drag-and-drop (card reordering and column moves) works via touch using pointer events. dnd-kit's pointer sensor handles this without platform-specific detection.
+- Mouse and keyboard continue to work unmodified on desktop; no functionality is sacrificed to accommodate mobile.
+
+#### Screen-by-screen adaptations
+
+**Dashboard:**
+- Board cards reflow from a multi-column grid to a single-column list.
+- The "New Board" button remains accessible at the top of the list.
+
+**Board (Kanban view):**
+- Columns are arranged in a **horizontally scrollable strip** with CSS scroll snap; one column fills the viewport at a time with a peek of the next.
+- A **column indicator** (e.g. dot row or name tabs) shows which column is active and allows tapping to jump to any column.
+- The column header shows the column name and card count; "Add card" is accessible per column.
+- Card drag-and-drop within and across columns works via touch. Moving a card to a non-visible column is possible by dragging toward the edge of the viewport (auto-scroll) or via a "Move to column" action in the card context menu.
+
+**Card detail view:**
+- The two-panel desktop layout (description/comments left, attributes right) collapses to a **single scrollable column** on mobile: title → description → attributes (collapsible section) → comments → activity.
+- The "Details" section (attributes) is collapsible with an expand/collapse toggle; collapsed by default on first open to prioritise description and comments.
+- The sticky unsaved-changes bar (FR-07) remains fixed at the bottom of the viewport; its height is accounted for in the scroll container so content is not obscured.
+- The Markdown editor's split-pane preview switches to a **tab-based Write/Preview** toggle on mobile to avoid the two-pane layout becoming too narrow to use.
+
+**Card create / quick-add:**
+- The inline card creation form on the board is accessible from the column header "+" button.
+- On submit (mobile keyboard "Done" / Enter), the form collapses and the new card appears at the top of the column.
+
+**Navigation bar:**
+- The breadcrumb truncates middle segments (board name) with an ellipsis if the total width exceeds the viewport; tapping the truncated breadcrumb expands it in a dropdown.
+- The user avatar menu remains accessible as a tap target in the top-right corner.
+
+**Drawings (FR-09):**
+- The Excalidraw canvas works in full-screen mode on mobile; touch drawing, pinch-to-zoom, and two-finger pan are supported natively by Excalidraw.
+- Transcluded drawing previews (`![[name.excalidraw]]`) render at full column width, constrained to a maximum height with vertical scroll within the preview if needed.
 
 ### FR-08 – Real-time Updates
 

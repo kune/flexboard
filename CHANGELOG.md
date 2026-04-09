@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- FR-10 (Responsive Design and Touch Support): mobile-first CSS (breakpoints: `< 640px` / `640–1024px` / `≥ 1024px`); horizontal scroll-snap Kanban on mobile (ADR-14); card detail collapses to single column; Markdown editor tab toggle on mobile; touch drag-and-drop via dnd-kit `PointerSensor`; 44×44 px touch targets; breadcrumb truncation; Excalidraw touch/pinch support — documented in `docs/requirements.md` (FR-10), `docs/planning.md` (Phase 4 tasks), `docs/architecture.md` (ADR-14)
 - FR-09 (Diagrams and Drawings): Mermaid in Markdown fences; Excalidraw as named card attachments (`CardDrawing` sub-resource) referenced via `![[name.excalidraw]]` wikilink transclusion — Obsidian-style, no inline JSON blobs; SVG cached server-side; drawings panel in card edit view; `ExcalidrawModal` for creating and editing; updated in `docs/requirements.md`, `docs/planning.md`, `docs/architecture.md` (ADR-13, data model, API)
 - `docker-compose.prod.yml` for deploying published Docker Hub images without building from source
 - `config/dex.yaml.example` — tracked template with all test accounts (password `Test1234!`) and `${FLEXBOARD_BASE_URL}` placeholders; copy to `config/dex.yaml` for VM/CI deployments without running `init.sh`

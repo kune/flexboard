@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-09 (FR-09 revised: Excalidraw as named card attachments with wikilink transclusion)  
+> **Last updated:** 2026-04-09 (FR-10 added: responsive design and touch support; FR-09 revised: Excalidraw as named card attachments with wikilink transclusion)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -136,6 +136,14 @@
 | ⬜ | Drawings — `ExcalidrawModal` component | Full-screen modal wrapping `<Excalidraw initialData={...}>` from `@excalidraw/excalidraw`; Save calls the drawings API and refreshes the drawings list; Cancel discards; lazy-loaded (code-split) due to bundle size (~1 MB) |
 | ⬜ | Drawings — attachment panel in card edit view | "Drawings" section in card detail listing attached drawings with name, SVG thumbnail, Edit and Delete actions; "Add drawing" button creates a new attachment and opens `ExcalidrawModal`; opening editor counts as a dirty state for the navigation guard (FR-09) |
 | ⬜ | Drawings — transclusion click-to-edit | Clicking a rendered `![[name.excalidraw]]` SVG in edit mode opens `ExcalidrawModal` for that drawing |
+| ⬜ | Responsive CSS — mobile-first base styles | Audit and convert `src/index.css` to mobile-first; base styles target `< 640px`; `min-width` media queries add tablet/desktop layout (FR-10) |
+| ⬜ | Responsive CSS — touch targets | Ensure all interactive elements meet 44×44 px minimum tap target size on mobile (FR-10) |
+| ⬜ | Board — horizontal scroll snap on mobile | Replace column flex layout with horizontally scrollable strip using `scroll-snap-type: x mandatory`; add column position indicator dots (FR-10) |
+| ⬜ | Card detail — single-column layout on mobile | Two-panel (content + sidebar) collapses to single scrollable column; attributes section collapsible via accordion toggle (FR-10) |
+| ⬜ | Markdown editor — tab toggle on mobile | Replace split-pane editor with Write / Preview tabs when viewport `< 640px`; full-width pane on desktop unchanged (FR-10) |
+| ⬜ | Navigation — breadcrumb truncation | Truncate long board names in nav breadcrumb on mobile with tap-to-expand; prevent overflow pushing avatar off-screen (FR-10) |
+| ⬜ | Touch drag-and-drop validation | Verify dnd-kit `PointerSensor` works correctly for touch drag on mobile browsers; tune `activationConstraint` if needed (FR-10) |
+| ⬜ | Excalidraw — mobile touch support | Confirm `@excalidraw/excalidraw` supports pinch-to-zoom and touch drawing in `ExcalidrawModal`; drawing previews render full-width on mobile (FR-10) |
 
 ---
 
