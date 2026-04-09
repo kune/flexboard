@@ -1,8 +1,8 @@
 # Flexboard – Architecture Document
 
-> **Version:** 0.7  
-> **Date:** 2026-04-08  
-> **Status:** Updated — FR-09 refined: Excalidraw inline code block approach added; ADR-13 updated
+> **Version:** 0.8  
+> **Date:** 2026-04-09  
+> **Status:** Updated — FR-09 revised: Excalidraw as named card attachments with wikilink transclusion; CardDrawing data model and API added
 
 ---
 
@@ -246,6 +246,30 @@ flexboard/
 }
 ```
 
+**CardDrawing**
+```json
+{
+  "_id": "ObjectId",
+  "card_id": "ObjectId",
+  "board_id": "ObjectId",
+  "name": "system-overview",
+  "excalidraw": {
+    "type": "excalidraw",
+    "version": 2,
+    "elements": [...],
+    "appState": { "gridSize": 20, "viewBackgroundColor": "#ffffff" },
+    "files": {}
+  },
+  "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\">…</svg>",
+  "created_at": "2026-04-09T10:00:00Z",
+  "updated_at": "2026-04-09T11:30:00Z"
+}
+```
+
+- `name` is unique per card and is the identifier used in transclusion syntax (`![[system-overview.excalidraw]]`).
+- `svg` is a cached SVG export regenerated on every save; used for fast view-mode rendering without re-running the Excalidraw export pipeline.
+- `excalidraw.files` holds embedded images (base64) referenced by drawing elements; kept inline to keep each drawing self-contained.
+
 **Card Type Schema**
 ```json
 {
@@ -277,6 +301,8 @@ cards:  { "attributes.labels": 1 }
 cards:  { board_id: 1, title: "text", description: "text" }  ← text index for search
 columns: { board_id: 1, position: 1 }
 comments: { card_id: 1, created_at: 1 }
+drawings: { card_id: 1 }
+drawings: { card_id: 1, name: 1 }  ← unique; used for transclusion lookup
 activity_log: { card_id: 1, created_at: -1 }
 ```
 
@@ -321,6 +347,12 @@ All endpoints except authentication-related routes require a valid `Authorizatio
 | **Schemas** | | | |
 | `GET` | `/card-types` | ✅ | List all card type schemas, sorted by type |
 | `GET` | `/card-types/:type` | ⬜ | Get schema for a specific type — Phase 4 |
+| **Drawings** | | | |
+| `GET` | `/boards/:boardId/cards/:cardId/drawings` | ⬜ | List all drawings attached to a card (id, name, svg; excalidraw JSON excluded) |
+| `POST` | `/boards/:boardId/cards/:cardId/drawings` | ⬜ | Create a drawing; body: `{ name, excalidraw }`; server caches SVG |
+| `GET` | `/boards/:boardId/cards/:cardId/drawings/:id` | ⬜ | Get a single drawing including full excalidraw JSON |
+| `PATCH` | `/boards/:boardId/cards/:cardId/drawings/:id` | ⬜ | Update name and/or excalidraw scene; server regenerates SVG cache |
+| `DELETE` | `/boards/:boardId/cards/:cardId/drawings/:id` | ⬜ | Delete a drawing (transclusion references become unresolved) |
 | **Real-time** | | | |
 | `GET` | `/boards/:boardId/events?token=` | ✅ | SSE stream for board-scoped events; token passed as query param |
 
@@ -605,26 +637,15 @@ The in-memory SSE broker works correctly for a single backend instance. If horiz
 | `number` | number | Number input |
 | `date` | ISO 8601 string | Date picker |
 | `enum` | string | Select dropdown |
-| `markdown` | string (Markdown) | Markdown editor with live preview; Mermaid fences rendered as diagrams; ` ```excalidraw ` fences rendered as static SVG with click-to-edit modal |
+| `markdown` | string (Markdown) | Markdown editor with live preview; Mermaid fences rendered as diagrams; `![[name.excalidraw]]` transclusions replaced by cached SVG |
 | `reference` | string (user ID) | User picker |
-| `drawing` | object (`DrawingData`) | Static SVG preview (view mode); embedded Excalidraw canvas (edit mode) |
 
-`DrawingData` is defined in `packages/shared`:
-
-```ts
-interface DrawingData {
-  /** Excalidraw scene JSON (elements, appState, files) */
-  excalidraw: object
-  /** Cached SVG string for fast view-mode rendering; regenerated on save */
-  svg?: string
-}
-```
-
-**Inline ` ```excalidraw ` ` rendering** uses a `react-markdown` `components.code` override:
-- Detects `className === 'language-excalidraw'`, parses the JSON from the code block.
-- View mode: calls `exportToSvg()` from `@excalidraw/utils`; injects the SVG node.
-- Edit mode: an "Edit drawing" button opens a modal with `<Excalidraw initialData={parsed}>`. On save, the modal replaces the code block's JSON in the Markdown textarea source.
-- No server-side rendering for the canvas component; `exportToSvg` is browser-only and must run client-side.
+**Transclusion rendering** (`![[name.excalidraw]]`) is handled by a custom remark plugin:
+- Parses wikilink image syntax `![[*.excalidraw]]` and transforms the node to carry the drawing name.
+- A `react-markdown` `components` override receives the drawing name, looks it up in the card's loaded drawings list (passed via React context), and renders the cached `svg` string inline.
+- If no matching drawing exists, renders a "Drawing not found: name.excalidraw" placeholder.
+- In edit mode, the SVG preview has an "Edit" affordance that opens the `ExcalidrawModal` for that attachment.
+- The remark plugin runs only on the frontend; no server-side SVG generation is required at render time (the SVG is pre-cached by the backend on save).
 
 ---
 
@@ -795,4 +816,4 @@ No build-time environment variables are required. All OIDC configuration (`autho
 | ADR-10 | Frontend styling | **Plain CSS (`src/index.css`)** | shadcn/ui + Tailwind were the original plan, but the HTML mockups already defined a complete, consistent design system. Transcribing that directly to a single CSS file was faster, removed a large dependency chain, and produced pixel-faithful results. May revisit if component reuse demands grow. |
 | ADR-11 | User management | **Dex static passwords (`config/dex.yaml`)** | Chosen over in-app registration (too much custom work) and external OAuth connectors (GitHub/Google — complicates fully local setup). Static passwords suit a small, known user group managed by an admin. Adding a user requires editing `config/dex.yaml` and restarting the Dex container. Passwords stored as bcrypt hashes. |
 | ADR-12 | SSE authentication | **Access token in `?token=` query param** | The browser's `EventSource` API does not support custom request headers, making the standard `Authorization: Bearer` pattern impossible. Alternatives considered: (1) short-lived SSE-specific tokens — adds complexity; (2) cookies — requires changing the OIDC token storage strategy. Query-param token is the established pattern for SSE auth in single-page apps. The exposure risk is low in a self-hosted deployment over localhost/private network. |
-| ADR-13 | Diagram rendering | **Mermaid (text-based) + Excalidraw inline + Excalidraw attribute** | Three complementary mechanisms: (1) Mermaid in ` ```mermaid ` fences for structured text diagrams — zero data model changes, version-control-friendly; (2) Excalidraw in ` ```excalidraw ` fences for freehand drawings embedded inside description/comments — data stored inline in the Markdown string, static SVG rendered in view mode, modal canvas for editing; (3) `drawing` attribute type for drawings attached at card level — stored as `DrawingData` JSON in `attributes`, rendered as SVG preview with embedded canvas in edit mode. Obsidian uses a separate-file + transclusion model (not inline code blocks in prose); no off-the-shelf rehype/remark plugin exists for Excalidraw code blocks — the inline renderer is a custom `react-markdown` `components.code` override backed by `exportToSvg` from `@excalidraw/utils`. Alternatives for freehand: tldraw (larger bundle, less stable API), draw.io (iframe-only, poor UX). |
+| ADR-13 | Diagram / drawing integration | **Mermaid (fenced code blocks) + Excalidraw (named card attachments with wikilink transclusion)** | Two distinct needs: structured diagrams (flowcharts, sequence, ER) expressed as text via ` ```mermaid ` — no data model change, version-control-friendly. Freehand drawings stored as named `CardDrawing` sub-resources; referenced in any Markdown field via `![[name.excalidraw]]`. Mirrors the Obsidian model (separate file + transclusion), which was found to be the dominant real-world pattern during research. Advantages over inline JSON code blocks: Markdown stays human-readable, the same drawing can be transcluded in multiple fields, editing is decoupled from the textarea (no JSON-in-textarea sync problem), and the backend pre-caches SVG so view-mode rendering is instant. SVG is generated server-side using `@excalidraw/utils exportToSvg` (requires jsdom polyfill in Node.js) or via the `excalidraw-to-svg` package. Alternatives for freehand: tldraw (larger bundle, less stable public API), draw.io (iframe-only embedding). |

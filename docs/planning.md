@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-08 (FR-09 refined: Excalidraw inline in Markdown added alongside attribute variant)  
+> **Last updated:** 2026-04-09 (FR-09 revised: Excalidraw as named card attachments with wikilink transclusion)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -130,13 +130,12 @@
 | ⬜ | Error states & loading skeletons | All data-fetching surfaces |
 | ⬜ | Empty states | New board, empty column, no search results |
 | ⬜ | Mermaid diagrams in Markdown | Add `rehype-mermaid` (or equivalent) to the markdown plugin pipeline in `lib/markdown.ts`; render `\`\`\`mermaid` fences as diagrams in all Markdown fields (FR-09) |
-| ⬜ | Excalidraw inline — `ExcalidrawBlock` component | `react-markdown` `components.code` override for `language-excalidraw`; view mode calls `exportToSvg` from `@excalidraw/utils`; edit mode opens `ExcalidrawModal`; modal save serialises updated JSON back into the Markdown textarea source (FR-09) |
-| ⬜ | Excalidraw inline — `ExcalidrawModal` component | Full-height modal wrapping `<Excalidraw initialData={...}>` from `@excalidraw/excalidraw`; Save writes updated scene JSON back to caller; Cancel discards changes; lazy-loaded (code-split) due to bundle size |
-| ⬜ | Excalidraw inline — `MarkdownEditor` callback | Extend `MarkdownEditor` with an `onSourceChange` callback so `ExcalidrawBlock` can update the Markdown source string when a drawing is saved |
-| ⬜ | Drawing attribute — shared types | Add `'drawing'` to `AttributeType` in `packages/shared`; define `DrawingData` interface (Excalidraw JSON envelope + optional SVG cache string) |
-| ⬜ | Drawing attribute — backend | Store `DrawingData` JSON in card `attributes`; no new endpoint needed; include drawing fields in activity log change detection |
-| ⬜ | Drawing attribute — `DrawingField` component | Read-only SVG preview; edit mode opens `ExcalidrawModal` (shared with inline variant); integrates with card dirty-state and navigation guard (FR-09) |
-| ⬜ | Drawing attribute — card type schema | Add `drawing`-type attribute to relevant card type schemas in `config/card-types.yaml` |
+| ⬜ | Drawings — shared types | Add `CardDrawing` type to `packages/shared` (`id`, `name`, `svg`, `excalidraw`, `createdAt`, `updatedAt`); no `AttributeType` change needed |
+| ⬜ | Drawings — `CardDrawing` Mongoose model + routes | `drawings` collection; CRUD routes under `/api/v1/boards/:boardId/cards/:cardId/drawings`; backend generates SVG cache on create/update using `excalidraw-to-svg`; unique index on `(cardId, name)` (FR-09) |
+| ⬜ | Drawings — remark transclusion plugin | Custom remark plugin that parses `![[name.excalidraw]]` wikilink syntax and emits a placeholder node; `react-markdown` component override resolves the name against a `DrawingsContext` and renders the cached SVG inline (FR-09) |
+| ⬜ | Drawings — `ExcalidrawModal` component | Full-screen modal wrapping `<Excalidraw initialData={...}>` from `@excalidraw/excalidraw`; Save calls the drawings API and refreshes the drawings list; Cancel discards; lazy-loaded (code-split) due to bundle size (~1 MB) |
+| ⬜ | Drawings — attachment panel in card edit view | "Drawings" section in card detail listing attached drawings with name, SVG thumbnail, Edit and Delete actions; "Add drawing" button creates a new attachment and opens `ExcalidrawModal`; opening editor counts as a dirty state for the navigation guard (FR-09) |
+| ⬜ | Drawings — transclusion click-to-edit | Clicking a rendered `![[name.excalidraw]]` SVG in edit mode opens `ExcalidrawModal` for that drawing |
 
 ---
 
