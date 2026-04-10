@@ -14,6 +14,22 @@ export const userManager = new UserManager({
   response_type: 'code',
   scope: 'openid profile email',
   userStore: new WebStorageStateStore({ store: window.localStorage }),
+  // Pre-seed the OIDC metadata so oidc-client-ts skips the discovery fetch.
+  // The discovery fetch is a JavaScript fetch() call that can fail with
+  // self-signed certificates before the user interacts with the page.
+  // All URLs are derived from the runtime origin so the same image works on
+  // any host.
+  metadata: {
+    issuer: OIDC_AUTHORITY,
+    authorization_endpoint: `${OIDC_AUTHORITY}/auth`,
+    token_endpoint: `${OIDC_AUTHORITY}/token`,
+    jwks_uri: `${OIDC_AUTHORITY}/keys`,
+    userinfo_endpoint: `${OIDC_AUTHORITY}/userinfo`,
+  },
+  // Dex's local-password connector does not properly support prompt=none
+  // (it shows the login form instead of returning login_required). Disabling
+  // automaticSilentRenew prevents the resulting prompt=none redirect loop.
+  automaticSilentRenew: false,
 })
 
 export function signIn(): Promise<void> {

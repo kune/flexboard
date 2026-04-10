@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- OIDC login on deployments with self-signed certificates: pre-seed `UserManager` metadata so oidc-client-ts skips the discovery fetch (a JavaScript `fetch()` that fails before user interaction on untrusted certs); disable `automaticSilentRenew` to prevent the `prompt=none` redirect loop caused by Dex's local-password connector not returning `login_required`
+
 ## [0.2.0] - 2026-04-10
 
 ### Added
