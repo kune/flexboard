@@ -223,7 +223,6 @@ function KColumn({ col, cards, boardId, nameMap }: KColumnProps) {
   const [addingCard, setAddingCard] = useState(false)
   const cardIds = cards.map((c) => c.id)
 
-  // Register the column body as a droppable so empty columns accept drops
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: col.id })
 
   return (
@@ -315,14 +314,26 @@ export default function Board() {
   const [currentUserSub, setCurrentUserSub] = useState<string | null>(null)
   const [activeCard, setActiveCard] = useState<Card | null>(null)
   const [localCards, setLocalCards] = useState<Card[] | null>(null)
-  // Track the column the card started in — handleDragOver mutates localCards before
-  // handleDragEnd runs, so we can't read movedCard.columnId there to detect cross-column moves.
+  const [activeColIndex, setActiveColIndex] = useState(0)
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches
+  )
+
   const dragSourceColId = useRef<string | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const setBoardCrumb = useUiStore((s) => s.setBoardCrumb)
   const qc = useQueryClient()
 
   useEffect(() => {
     getUser().then((u) => setCurrentUserSub(u?.profile.sub ?? null))
+  }, [])
+
+  // Track mobile breakpoint for sensor tuning
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
   }, [])
 
   const { data: board } = useQuery({
@@ -358,10 +369,37 @@ export default function Board() {
 
   useBoardSSE(boardId)
 
-  // Keep local copy for optimistic dnd updates
   useEffect(() => {
     if (cards) setLocalCards(cards)
   }, [cards])
+
+  // Sorted columns — computed before early return so the IntersectionObserver
+  // effect can reference it as a dependency.
+  const sortedColumns = (columns ?? []).slice().sort((a, b) => a.position - b.position)
+
+  // IntersectionObserver for mobile column indicator dots
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container || sortedColumns.length === 0) return
+
+    const colEls = container.querySelectorAll('.kanban-col')
+    if (colEls.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.intersectionRatio >= 0.5) {
+            const idx = Array.from(colEls).indexOf(entry.target as Element)
+            if (idx !== -1) setActiveColIndex(idx)
+          }
+        }
+      },
+      { root: container, threshold: 0.5 },
+    )
+
+    colEls.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [sortedColumns.length])
 
   const moveMutation = useMutation({
     mutationFn: ({ cardId, data }: { cardId: string; data: { columnId?: string; position?: number } }) =>
@@ -369,8 +407,14 @@ export default function Board() {
     onError: () => qc.invalidateQueries({ queryKey: ['cards', boardId] }),
   })
 
+  // Touch: delay+tolerance prevents scroll-swipe from triggering a drag.
+  // Mouse: distance-only for snappy desktop feel.
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(PointerSensor, {
+      activationConstraint: isMobile
+        ? { delay: 200, tolerance: 8 }
+        : { distance: 5 },
+    }),
   )
 
   const displayCards = localCards ?? cards ?? []
@@ -391,7 +435,6 @@ export default function Board() {
     const activeCard = displayCards.find((c) => c.id === active.id)
     if (!activeCard) return
 
-    // over.id is either a card id or a column id (from the useDroppable column body)
     const overCard = displayCards.find((c) => c.id === over.id)
     const targetColId = overCard ? overCard.columnId : (over.id as string)
 
@@ -409,8 +452,6 @@ export default function Board() {
     dragSourceColId.current = null
     if (!over || !sourceColId) return
 
-    // Use server cards (not localCards) to get the card's identity — localCards may already
-    // have the updated columnId from handleDragOver, making cross-column detection impossible.
     const cardId = active.id as string
     const overCard = displayCards.find((c) => c.id === over.id)
     const targetColId = overCard ? overCard.columnId : (over.id as string)
@@ -420,7 +461,6 @@ export default function Board() {
     if (isCrossColumn) {
       moveMutation.mutate({ cardId, data: { columnId: targetColId } })
     } else if (over.id !== active.id) {
-      // Same-column reorder
       const colCards = (localCards ?? [])
         .filter((c) => c.columnId === targetColId)
         .sort((a, b) => a.position - b.position)
@@ -437,9 +477,15 @@ export default function Board() {
     }
   }
 
-  if (isLoading) return <div className="loading-center">Loading board…</div>
+  // Scroll to a column when a dot is tapped
+  const scrollToColumn = (idx: number) => {
+    const container = scrollRef.current
+    if (!container) return
+    const col = container.querySelectorAll('.kanban-col')[idx] as HTMLElement | undefined
+    col?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
+  }
 
-  const sortedColumns = (columns ?? []).slice().sort((a, b) => a.position - b.position)
+  if (isLoading) return <div className="loading-center">Loading board…</div>
 
   return (
     <>
@@ -457,7 +503,7 @@ export default function Board() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="kanban-wrap">
+        <div className="kanban-wrap" ref={scrollRef}>
           {sortedColumns.map((col) => (
             <KColumn
               key={col.id}
@@ -477,6 +523,20 @@ export default function Board() {
           {activeCard ? <CardOverlay card={activeCard} /> : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Column indicator dots — hidden on desktop via CSS */}
+      {sortedColumns.length > 1 && (
+        <div className="kanban-dots">
+          {sortedColumns.map((col, i) => (
+            <button
+              key={col.id}
+              className={`kanban-dot${i === activeColIndex ? ' active' : ''}`}
+              onClick={() => scrollToColumn(i)}
+              aria-label={`Go to column ${col.name}`}
+            />
+          ))}
+        </div>
+      )}
 
       {showAddCol && <AddColumnModal boardId={boardId!} onClose={() => setShowAddCol(false)} />}
       {showMembers && currentUserSub && (

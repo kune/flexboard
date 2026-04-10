@@ -298,6 +298,7 @@ export default function CardDetail() {
   const setCardTitle = useUiStore((s) => s.setCardTitle)
 
   const [editing, setEditing] = useState(false)
+  const [attrOpen, setAttrOpen] = useState(true)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editAttrs, setEditAttrs] = useState<Record<string, unknown>>({})
@@ -463,55 +464,57 @@ export default function CardDetail() {
           <Link to={`/boards/${boardId}`} className="btn btn-ghost btn-sm">← Back</Link>
           <TypeBadge type={card.type} />
           <div style={{ flex: 1 }} />
-          {editing ? (
-            <>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => saveMutation.mutate()}
-                disabled={!editTitle.trim() || saveMutation.isPending}
-              >
-                {saveMutation.isPending ? 'Saving…' : 'Save'}
+          <div className="detail-topbar-actions">
+            {editing ? (
+              <>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => saveMutation.mutate()}
+                  disabled={!editTitle.trim() || saveMutation.isPending}
+                >
+                  {saveMutation.isPending ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    const dirty =
+                      editTitle !== card.title ||
+                      editDescription !== (card.description ?? '') ||
+                      JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {})
+                    if (dirty) {
+                      setConfirm({
+                        message: 'Discard changes?',
+                        detail: 'Your unsaved edits to this card will be lost.',
+                        danger: true,
+                        confirmLabel: 'Discard',
+                        onConfirm: () => { resetEdit(); setConfirm(null) },
+                      })
+                    } else {
+                      resetEdit()
+                    }
+                  }}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button className="btn btn-secondary btn-sm" onClick={() => setEditing(true)}>
+                Edit
               </button>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => {
-                  const dirty =
-                    editTitle !== card.title ||
-                    editDescription !== (card.description ?? '') ||
-                    JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {})
-                  if (dirty) {
-                    setConfirm({
-                      message: 'Discard changes?',
-                      detail: 'Your unsaved edits to this card will be lost.',
-                      danger: true,
-                      confirmLabel: 'Discard',
-                      onConfirm: () => { resetEdit(); setConfirm(null) },
-                    })
-                  } else {
-                    resetEdit()
-                  }
-                }}
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button className="btn btn-secondary btn-sm" onClick={() => setEditing(true)}>
-              Edit
+            )}
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={() => setConfirm({
+                message: 'Delete card?',
+                detail: `"${card.title}" will be permanently deleted.`,
+                danger: true,
+                confirmLabel: 'Delete',
+                onConfirm: () => { deleteMutation.mutate(); setConfirm(null) },
+              })}
+            >
+              Delete
             </button>
-          )}
-          <button
-            className="btn btn-danger btn-sm"
-            onClick={() => setConfirm({
-              message: 'Delete card?',
-              detail: `"${card.title}" will be permanently deleted.`,
-              danger: true,
-              confirmLabel: 'Delete',
-              onConfirm: () => { deleteMutation.mutate(); setConfirm(null) },
-            })}
-          >
-            Delete
-          </button>
+          </div>
         </div>
 
         {editing ? (
@@ -635,12 +638,19 @@ export default function CardDetail() {
         {/* Attribute sidebar fields — non-markdown schema fields */}
         {schemaFields.length > 0 && (
           <div className="sidebar-section">
-            <div className="sidebar-section-title">
-              Attributes
+            <div className="sidebar-section-header">
+              <button
+                className="sidebar-section-accordion"
+                onClick={() => setAttrOpen((o) => !o)}
+                aria-expanded={attrOpen}
+              >
+                <span className="sidebar-section-title">Attributes</span>
+                <span className="sidebar-accordion-icon">{attrOpen ? '▲' : '▼'}</span>
+              </button>
               {!editing && (
                 <button
                   className="btn btn-ghost btn-sm"
-                  style={{ float: 'right', fontSize: 11, padding: '2px 6px' }}
+                  style={{ fontSize: 11, padding: '2px 6px' }}
                   onClick={() => setEditing(true)}
                 >
                   Edit
@@ -648,7 +658,7 @@ export default function CardDetail() {
               )}
             </div>
 
-            {editing ? (
+            {attrOpen && (editing ? (
               schemaFields
                 .filter((f) => f.type !== 'markdown')
                 .map((f) => {
@@ -675,7 +685,7 @@ export default function CardDetail() {
               schemaFields.map((f) => (
                 <AttributeRow key={f.key} field={f} value={card.attributes?.[f.key]} nameMap={nameMap} />
               ))
-            )}
+            ))}
           </div>
         )}
 

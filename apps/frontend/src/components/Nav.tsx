@@ -10,12 +10,12 @@ interface NavProps {
 
 export default function Nav({ user }: NavProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [crumbExpanded, setCrumbExpanded] = useState(false)
   const boardId = useUiStore((s) => s.boardId)
   const boardName = useUiStore((s) => s.boardName)
   const cardTitle = useUiStore((s) => s.cardTitle)
 
   const initials = (() => {
-    // Full name → two initials; otherwise use the local part of preferred_username / email / sub
     if (user.profile.name) {
       const parts = user.profile.name.split(/\s+/)
       if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
@@ -37,18 +37,32 @@ export default function Nav({ user }: NavProps) {
       </Link>
 
       {boardName && (
-        <div className="nav-crumb">
-          <span className="nav-crumb-sep">/</span>
-          <Link to="/" className="nav-crumb a">Boards</Link>
-          <span className="nav-crumb-sep">/</span>
+        <div className="nav-crumb" data-expanded={crumbExpanded ? 'true' : undefined}>
+          {/* "…" expand button — shown on mobile only; hidden at ≥640px via CSS */}
+          <button
+            className="nav-crumb-expand"
+            onClick={() => setCrumbExpanded((e) => !e)}
+            aria-label={crumbExpanded ? 'Collapse breadcrumb' : 'Expand breadcrumb'}
+          >
+            {crumbExpanded ? '‹' : '…'}
+          </button>
+
+          {/* Ancestor segments — hidden on mobile unless expanded; always shown at ≥640px */}
+          <span className="nav-crumb-sep nav-crumb-ancestor">/</span>
+          <Link to="/" className="nav-crumb-ancestor">Boards</Link>
+
           {cardTitle ? (
             <>
-              <Link to={`/boards/${boardId}`} className="nav-crumb a">{boardName}</Link>
-              <span className="nav-crumb-sep">/</span>
+              <span className="nav-crumb-sep nav-crumb-ancestor">/</span>
+              <Link to={`/boards/${boardId}`} className="nav-crumb-ancestor">{boardName}</Link>
+              <span className="nav-crumb-sep nav-crumb-ancestor">/</span>
               <span className="nav-crumb-current">{cardTitle}</span>
             </>
           ) : (
-            <span className="nav-crumb-current">{boardName}</span>
+            <>
+              <span className="nav-crumb-sep nav-crumb-ancestor">/</span>
+              <span className="nav-crumb-current">{boardName}</span>
+            </>
           )}
         </div>
       )}
