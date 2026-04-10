@@ -299,6 +299,7 @@ export default function CardDetail() {
 
   const [editing, setEditing] = useState(false)
   const [attrOpen, setAttrOpen] = useState(true)
+  const [descFullscreen, setDescFullscreen] = useState(false)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editAttrs, setEditAttrs] = useState<Record<string, unknown>>({})
@@ -534,9 +535,21 @@ export default function CardDetail() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">
-                Description{descDirty && <span style={{ marginLeft: 5, color: '#3b82f6', fontWeight: 400, fontSize: 13 }}>✎</span>}
-              </label>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                <span className="form-label" style={{ marginBottom: 0 }}>
+                  Description{descDirty && <span style={{ marginLeft: 5, color: '#3b82f6', fontWeight: 400, fontSize: 13 }}>✎</span>}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm md-fullscreen-btn"
+                  style={{ marginLeft: 'auto', fontSize: 16, padding: '6px 10px' }}
+                  onClick={() => setDescFullscreen(true)}
+                  title="Fullscreen edit"
+                  aria-label="Edit description fullscreen"
+                >
+                  ⛶
+                </button>
+              </div>
               <div style={descDirty ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6' } : {}}>
                 <MarkdownEditor
                   value={editDescription}
@@ -728,6 +741,29 @@ export default function CardDetail() {
             Discard
           </button>
         </div>
+      </div>
+    )}
+
+    {descFullscreen && (
+      <div className="md-fullscreen-overlay">
+        <div className="md-fullscreen-header">
+          <span className="md-fullscreen-title">
+            Description{descDirty && <span style={{ marginLeft: 6, color: '#3b82f6', fontWeight: 400 }}>✎</span>}
+          </span>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() => setDescFullscreen(false)}
+          >
+            Done
+          </button>
+        </div>
+        <MarkdownEditor
+          value={editDescription}
+          onChange={setEditDescription}
+          rows={20}
+          placeholder="Description…"
+        />
       </div>
     )}
 

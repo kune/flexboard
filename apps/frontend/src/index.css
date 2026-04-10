@@ -566,14 +566,13 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   min-height: 44px;
 }
 .md-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
-/* Hidden pane on mobile (toggled by tab) */
-.md-pane-hidden { display: none; }
-
 .md-editor-pane {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
+/* Must come after .md-editor-pane to win the cascade (same specificity) */
+.md-pane-hidden { display: none; }
 .md-editor-pane-label {
   font-size: 11px;
   font-weight: 600;
@@ -1020,8 +1019,11 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 /* ══════════════════════════════════════════════════════════ */
 
 @media (max-width: 639px) {
-  /* Prevent iOS Safari zoom on input focus */
+  /* Prevent iOS Safari zoom on input focus.
+     .md-editor-textarea has font-size: 13px !important with the same
+     specificity — this later declaration in the same media block wins. */
   input, textarea, select { font-size: 16px !important; }
+  .md-editor-textarea { font-size: 16px !important; }
 
   /* Enlarge avatar touch target */
   .nav-avatar { width: 44px; height: 44px; font-size: 14px; }
@@ -1029,3 +1031,46 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   /* Enlarge btn-sm touch target */
   .btn-sm { padding: 11px 12px; }
 }
+
+/* ── Fullscreen description editor (mobile) ───────────────── */
+
+/* Expand button — only visible on mobile */
+.md-fullscreen-btn { display: inline-flex; }
+@media (min-width: 640px) {
+  .md-fullscreen-btn { display: none; }
+}
+
+/* Fullscreen overlay covers the entire viewport above the nav */
+.md-fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+.md-fullscreen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  min-height: 52px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  flex-shrink: 0;
+}
+.md-fullscreen-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+/* Editor inside the overlay fills remaining space */
+.md-fullscreen-overlay .md-editor {
+  flex: 1;
+  border-radius: 0;
+  border: none;
+  overflow: hidden;
+  min-height: 0;
+}
+.md-fullscreen-overlay .md-editor-pane { flex: 1; min-height: 0; }
+.md-fullscreen-overlay .md-editor-textarea { height: 100%; }
