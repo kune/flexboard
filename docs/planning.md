@@ -136,13 +136,13 @@
 | ⬜ | Drawings — `ExcalidrawModal` component | Full-screen modal wrapping `<Excalidraw initialData={...}>` from `@excalidraw/excalidraw`; Save calls the drawings API and refreshes the drawings list; Cancel discards; lazy-loaded (code-split) due to bundle size (~1 MB) |
 | ⬜ | Drawings — attachment panel in card edit view | "Drawings" section in card detail listing attached drawings with name, SVG thumbnail, Edit and Delete actions; "Add drawing" button creates a new attachment and opens `ExcalidrawModal`; opening editor counts as a dirty state for the navigation guard (FR-09) |
 | ⬜ | Drawings — transclusion click-to-edit | Clicking a rendered `![[name.excalidraw]]` SVG in edit mode opens `ExcalidrawModal` for that drawing |
-| ⬜ | Responsive CSS — mobile-first base styles | Audit and convert `src/index.css` to mobile-first; base styles target `< 640px`; `min-width` media queries add tablet/desktop layout (FR-10) |
-| ⬜ | Responsive CSS — touch targets | Ensure all interactive elements meet 44×44 px minimum tap target size on mobile (FR-10) |
-| ⬜ | Board — horizontal scroll snap on mobile | Replace column flex layout with horizontally scrollable strip using `scroll-snap-type: x mandatory`; add column position indicator dots (FR-10) |
-| ⬜ | Card detail — single-column layout on mobile | Two-panel (content + sidebar) collapses to single scrollable column; attributes section collapsible via accordion toggle (FR-10) |
-| ⬜ | Markdown editor — tab toggle on mobile | Replace split-pane editor with Write / Preview tabs when viewport `< 640px`; full-width pane on desktop unchanged (FR-10) |
-| ⬜ | Navigation — breadcrumb truncation | Truncate long board names in nav breadcrumb on mobile with tap-to-expand; prevent overflow pushing avatar off-screen (FR-10) |
-| ⬜ | Touch drag-and-drop validation | Verify dnd-kit `PointerSensor` works correctly for touch drag on mobile browsers; tune `activationConstraint` if needed (FR-10) |
+| ✅ | Responsive CSS — mobile-first base styles | `src/index.css` converted to mobile-first; `@media (min-width: 640px)` and `(min-width: 1024px)` blocks restore desktop layout (FR-10) |
+| ✅ | Responsive CSS — touch targets | `nav-icon-btn`, `nav-avatar`, `modal-close`, `kanban-add-btn`, `comment-action-btn` all ≥ 44×44 px; `btn-sm` boosted on mobile (FR-10) |
+| ✅ | Board — horizontal scroll snap on mobile | `scroll-snap-type: x mandatory`; full-viewport-width columns; `IntersectionObserver` drives indicator dots; dots hidden at ≥ 640 px (FR-10) |
+| ✅ | Card detail — single-column layout on mobile | `flex-direction: column` on mobile; grid restored at ≥ 1024 px; attributes section accordion with `attrOpen` state (FR-10) |
+| ✅ | Markdown editor — tab toggle on mobile | Write/Preview tab bar on mobile; `md-pane-hidden` hides inactive pane (display:none preserves value); split-pane restored at ≥ 640 px (FR-10) |
+| ✅ | Navigation — breadcrumb truncation | `…` expand button shows/hides ancestor crumb segments via `data-expanded`; button hidden at ≥ 640 px (FR-10) |
+| ✅ | Touch drag-and-drop validation | dnd-kit `PointerSensor` uses `{ delay:200, tolerance:8 }` on mobile (prevents scroll-swipe triggering drag), `{ distance:5 }` on desktop; `isMobile` state reactive to resize (FR-10) |
 | ⬜ | Excalidraw — mobile touch support | Confirm `@excalidraw/excalidraw` supports pinch-to-zoom and touch drawing in `ExcalidrawModal`; drawing previews render full-width on mobile (FR-10) |
 
 ---
