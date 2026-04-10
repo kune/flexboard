@@ -5,19 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-10
+
 ### Added
-- FR-10 (Responsive Design and Touch Support) **implemented**: mobile-first CSS; scroll-snap Kanban with column indicator dots; card detail single-column collapse; Markdown editor Write/Preview tab toggle; breadcrumb truncation with expand button; attributes accordion; 44×44 px touch targets throughout; dnd-kit `PointerSensor` with `delay:200` on mobile; `env(safe-area-inset-bottom)` on unsaved bar; iOS zoom prevention (`font-size: 16px` on inputs)
-- FR-09 (Diagrams and Drawings): Mermaid in Markdown fences; Excalidraw as named card attachments (`CardDrawing` sub-resource) referenced via `![[name.excalidraw]]` wikilink transclusion — Obsidian-style, no inline JSON blobs; SVG cached server-side; drawings panel in card edit view; `ExcalidrawModal` for creating and editing; updated in `docs/requirements.md`, `docs/planning.md`, `docs/architecture.md` (ADR-13, data model, API)
-- `docker-compose.prod.yml` for deploying published Docker Hub images without building from source
-- `config/dex.yaml.example` — tracked template with all test accounts (password `Test1234!`) and `${FLEXBOARD_BASE_URL}` placeholders; copy to `config/dex.yaml` for VM/CI deployments without running `init.sh`
+- FR-10 – Responsive Design and Touch Support: mobile-first CSS (breakpoints `< 640 px` / `640–1024 px` / `≥ 1024 px`); scroll-snap Kanban with column indicator dots; card detail single-column collapse with attributes accordion; Markdown editor Write/Preview tab toggle; fullscreen description editor (⛶ button, visible on mobile only); breadcrumb truncation with expand button; 44 × 44 px touch targets throughout; dnd-kit `PointerSensor` with `{ delay: 200, tolerance: 8 }` on mobile; `env(safe-area-inset-bottom)` on unsaved bar
+- `docker-compose.prod.yml` — deploy from published Docker Hub images without building from source
+- `config/dex.yaml.example` — tracked template with all test accounts (password `Test1234!`) and `${FLEXBOARD_BASE_URL}` placeholders for VM/CI deployments
 - `docker-compose.tls.yml` — compose overlay that adds HTTPS via a self-signed cert (required for OIDC on non-localhost IPs; `crypto.subtle` is only available in secure contexts)
-- `docker/nginx-tls.conf` — nginx config with TLS termination and HTTP→HTTPS redirect, used by the TLS overlay
+- `docker/nginx-tls.conf` — nginx config with TLS termination and HTTP → HTTPS redirect
 
 ### Changed
 - Frontend OIDC authority now derived from `window.location.origin` at runtime — the same Docker image works under any hostname or IP without rebuild
-- `FLEXBOARD_BASE_URL` env var now controls backend `CORS_ORIGIN` and `DEX_ISSUER` via Docker Compose substitution
-- `config/dex.yaml.example` uses `${FLEXBOARD_BASE_URL}` placeholders; deployment generates `config/dex.yaml` via `sed "s|\${FLEXBOARD_BASE_URL}|$FLEXBOARD_BASE_URL|g" config/dex.yaml.example > config/dex.yaml` (Dex does not expand shell variables from its environment)
-- `scripts/init.sh` generates `dex.yaml` with `${FLEXBOARD_BASE_URL}` placeholders (for subsequent `sed` substitution) instead of hardcoded localhost URLs
+- `FLEXBOARD_BASE_URL` env var controls backend `CORS_ORIGIN` and `DEX_ISSUER` via Docker Compose substitution
+- `config/dex.yaml.example` uses `${FLEXBOARD_BASE_URL}` placeholders; deployment substitutes via `sed "s|\${FLEXBOARD_BASE_URL}|$FLEXBOARD_BASE_URL|g" config/dex.yaml.example > config/dex.yaml` (Dex does not expand shell variables from its config file)
+
+### Fixed
+- `scripts/init.sh`: single-quoted heredoc (`<<'EOF'`) wrote `${FLEXBOARD_BASE_URL}` literally into `config/dex.yaml`; Dex received an invalid issuer URL and failed its healthcheck — fixed by expanding the variable at generation time
+- `scripts/init.sh`: re-running the script with an existing unhealthy Dex container caused an immediate dependency failure; added `--force-recreate` so containers are always replaced on every run (MongoDB volumes unaffected)
+- Mobile: Write/Preview tab toggle did not work — `.md-pane-hidden` was declared before `.md-editor-pane` in the stylesheet; same specificity meant `display: flex` always won; fixed by swapping declaration order
+- Mobile: iOS Safari zoomed on textarea focus — `.md-editor-textarea { font-size: 13px !important }` outranked the generic mobile override; added an explicit `.md-editor-textarea` rule in the mobile media block
 
 ## [0.1.0] - 2026-04-07
 

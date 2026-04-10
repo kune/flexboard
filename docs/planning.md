@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-09 (FR-10 added: responsive design and touch support; FR-09 revised: Excalidraw as named card attachments with wikilink transclusion)  
+> **Last updated:** 2026-04-10 (FR-10 fully implemented incl. fullscreen description editor; init.sh bugs fixed)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -143,6 +143,7 @@
 | ✅ | Markdown editor — tab toggle on mobile | Write/Preview tab bar on mobile; `md-pane-hidden` hides inactive pane (display:none preserves value); split-pane restored at ≥ 640 px (FR-10) |
 | ✅ | Navigation — breadcrumb truncation | `…` expand button shows/hides ancestor crumb segments via `data-expanded`; button hidden at ≥ 640 px (FR-10) |
 | ✅ | Touch drag-and-drop validation | dnd-kit `PointerSensor` uses `{ delay:200, tolerance:8 }` on mobile (prevents scroll-swipe triggering drag), `{ distance:5 }` on desktop; `isMobile` state reactive to resize (FR-10) |
+| ✅ | Fullscreen description editor on mobile | ⛶ button next to Description label (hidden at ≥640 px); opens `position:fixed` overlay (z-index 400) with MarkdownEditor filling viewport below a header bar; "Done" button exits; hides all other card content while editing (FR-10) |
 | ⬜ | Excalidraw — mobile touch support | Confirm `@excalidraw/excalidraw` supports pinch-to-zoom and touch drawing in `ExcalidrawModal`; drawing previews render full-width on mobile (FR-10) |
 
 ---

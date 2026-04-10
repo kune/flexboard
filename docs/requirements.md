@@ -1,9 +1,9 @@
 # Flexboard – Requirements Document
 
 > **Name:** Flexboard  
-> **Version:** 0.6  
-> **Date:** 2026-04-09  
-> **Status:** Updated — FR-10 added: responsive design and touch support
+> **Version:** 0.7  
+> **Date:** 2026-04-10  
+> **Status:** Updated — FR-10 fullscreen description editor added
 
 ---
 
@@ -195,6 +195,7 @@ The application uses a **mobile-first** CSS approach: base styles target mobile,
 - The "Details" section (attributes) is collapsible with an expand/collapse toggle; collapsed by default on first open to prioritise description and comments.
 - The sticky unsaved-changes bar (FR-07) remains fixed at the bottom of the viewport; its height is accounted for in the scroll container so content is not obscured.
 - The Markdown editor's split-pane preview switches to a **tab-based Write/Preview** toggle on mobile to avoid the two-pane layout becoming too narrow to use.
+- When editing a long-form Markdown field (e.g. Description) on mobile, a **fullscreen edit button** (⛶) expands the editor to cover the entire viewport, hiding the topbar, sidebar, comments and all other fields. A "Done" button exits fullscreen and returns to the normal edit view. The button is hidden on desktop (≥ 640 px) where space is sufficient.
 
 **Card create / quick-add:**
 - The inline card creation form on the board is accessible from the column header "+" button.

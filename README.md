@@ -8,12 +8,14 @@ A self-hosted Kanban board application with real-time updates, OIDC authenticati
 
 ## Features
 
-- Kanban boards with drag-and-drop card management
+- Kanban boards with drag-and-drop card management (mouse and touch)
 - Schema-driven card types (task, bug, story, epic) with custom attributes
 - Markdown rendering for descriptions and rich-text fields
 - Real-time updates via Server-Sent Events (SSE)
 - Comments and activity log per card
+- Board membership with role-based access (owner / editor / viewer)
 - OIDC authentication via self-hosted [Dex](https://dexidp.io/)
+- **Responsive design** — fully usable on phones and tablets; scroll-snap Kanban, touch drag-and-drop, fullscreen Markdown editor on mobile
 
 ---
 
@@ -28,9 +30,9 @@ bash scripts/init.sh
 ```
 
 The script will:
-1. Prompt for an admin password and generate `config/dex.yaml` (bcrypt-hashed)
-2. Build and start all services
-3. Wait until everything is healthy
+1. Prompt for an admin password and generate `config/dex.yaml` with a bcrypt hash
+2. Build Docker images and start all services (`--force-recreate` ensures a clean state on re-runs)
+3. Wait until every service passes its healthcheck
 
 Once complete, open **http://localhost** and sign in with `admin@flexboard.localhost`.
 
@@ -38,7 +40,60 @@ Once complete, open **http://localhost** and sign in with `admin@flexboard.local
 
 ## Re-running init
 
-`init.sh` is safe to re-run. If `config/dex.yaml` already exists, the password step is skipped and `docker compose up -d --build` is run to apply any image changes.
+`init.sh` is safe to re-run. If `config/dex.yaml` already exists, the password step is skipped. All containers are recreated (`--force-recreate`) so any config or image changes take effect immediately. MongoDB data is preserved.
+
+---
+
+## Deploying on a LAN / VM
+
+OIDC requires HTTPS on any address that is not `localhost` (the browser's `crypto.subtle` API is unavailable in plain HTTP contexts). Use the TLS compose overlay, which adds a self-signed certificate.
+
+### 1. Generate a self-signed certificate
+
+```bash
+mkdir -p certs
+openssl req -x509 -newkey rsa:2048 -nodes \
+  -keyout certs/key.pem -out certs/cert.pem -days 365 \
+  -subj "/CN=flexboard" \
+  -addext "subjectAltName=IP:<YOUR_IP>"
+```
+
+### 2. Generate `config/dex.yaml`
+
+```bash
+export FLEXBOARD_BASE_URL=https://<YOUR_IP>
+sed "s|\${FLEXBOARD_BASE_URL}|$FLEXBOARD_BASE_URL|g" \
+  config/dex.yaml.example > config/dex.yaml
+```
+
+The example file includes six test accounts (password `Test1234!`). Edit `config/dex.yaml` to add or change accounts; restart Dex afterwards.
+
+### 3. Start with TLS overlay
+
+```bash
+FLEXBOARD_BASE_URL=https://<YOUR_IP> \
+  docker compose -f docker-compose.yml -f docker-compose.tls.yml up -d --build
+```
+
+Accept the browser security warning for the self-signed certificate (or install it as a trusted CA).
+
+---
+
+## Production deployment (Docker Hub images)
+
+To run from published images without building from source:
+
+```bash
+export FLEXBOARD_BASE_URL=https://<YOUR_DOMAIN_OR_IP>
+sed "s|\${FLEXBOARD_BASE_URL}|$FLEXBOARD_BASE_URL|g" \
+  config/dex.yaml.example > config/dex.yaml
+
+# HTTP (localhost only):
+docker compose -f docker-compose.prod.yml up -d
+
+# HTTPS (LAN / public):
+docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml up -d
+```
 
 ---
 
@@ -50,7 +105,7 @@ Once complete, open **http://localhost** and sign in with `admin@flexboard.local
 cp config/dex.yaml.example config/dex.yaml
 ```
 
-Replace the `hash` value with a real bcrypt hash:
+Replace the `hash` values with real bcrypt hashes for your users:
 
 ```bash
 python3 -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt(10)).decode())"
@@ -66,11 +121,12 @@ docker compose up -d --build
 
 ## Environment variables
 
-No environment variables are required. The following optional overrides can be set in a `.env` file:
+No environment variables are required for a default localhost deployment. The following can be set in a `.env` file or exported before running `docker compose`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `FRONTEND_PORT` | `80` | Host port for the nginx frontend |
+| `FLEXBOARD_BASE_URL` | `http://localhost` | Public base URL; controls CORS origin and Dex issuer |
+| `FRONTEND_PORT` | `80` | Host port for the nginx frontend (HTTP) |
 | `DEX_PORT` | `5556` | Host port for the Dex OIDC provider |
 
 ---
@@ -107,9 +163,10 @@ PORT=3001
 
 `apps/frontend/.env.local`:
 ```dotenv
-VITE_OIDC_AUTHORITY=http://localhost/dex
 VITE_OIDC_CLIENT_ID=flexboard-web
 ```
+
+The OIDC authority is derived from `window.location.origin` at runtime; no `VITE_OIDC_AUTHORITY` override is needed for localhost.
 
 ### 4. Start the apps
 
@@ -129,7 +186,7 @@ Access at **http://localhost** (proxied by nginx).
 
 ```
 Browser
-  └─► nginx (:80)
+  └─► nginx (:80 / :443)
         ├─► /api/*  ──► backend (Fastify, :3001)
         │                 └─► MongoDB
         ├─► /dex/*  ──► Dex (:5556)
