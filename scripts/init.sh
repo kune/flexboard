@@ -97,7 +97,10 @@ fi
 
 # ── 2. Build and start all services ──────────────────────────────────────────
 step "Building and starting all services"
-docker compose up -d --build
+# --force-recreate ensures containers from failed previous runs are replaced,
+# picking up any config changes (e.g. a regenerated dex.yaml). Volumes are
+# not affected, so existing MongoDB data is preserved on re-runs.
+docker compose up -d --build --force-recreate
 
 log "Waiting for Dex to become healthy (up to 60 s)…"
 DEADLINE=$(( $(date +%s) + 60 ))
