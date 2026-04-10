@@ -60,8 +60,9 @@ else
   HASH=$(_bcrypt_hash "$ADMIN_PASS")
 
   mkdir -p config
-  cat > "$DEX_CONFIG" <<'EOF'
-issuer: ${FLEXBOARD_BASE_URL}/dex
+  DEX_BASE_URL="${FLEXBOARD_BASE_URL:-http://localhost}"
+  cat > "$DEX_CONFIG" <<EOF
+issuer: $DEX_BASE_URL/dex
 
 storage:
   type: memory
@@ -76,7 +77,7 @@ staticClients:
   - id: flexboard-web
     name: Flexboard Web
     redirectURIs:
-      - ${FLEXBOARD_BASE_URL}/auth/callback
+      - $DEX_BASE_URL/auth/callback
     public: true
 EOF
 
