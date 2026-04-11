@@ -303,6 +303,7 @@ export default function CardDetail() {
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [editAttrs, setEditAttrs] = useState<Record<string, unknown>>({})
+  const [editColumnId, setEditColumnId] = useState('')
   const [commentDraft, setCommentDraft] = useState('')
   const [commentEditDirty, setCommentEditDirty] = useState(false)
   const [commentEditCancelSeq, setCommentEditCancelSeq] = useState(0)
@@ -367,6 +368,7 @@ export default function CardDetail() {
       setEditTitle(card.title)
       setEditDescription(card.description ?? '')
       setEditAttrs({ ...(card.attributes ?? {}) })
+      setEditColumnId(card.columnId)
     }
   }, [card])
 
@@ -376,6 +378,7 @@ export default function CardDetail() {
         title: editTitle.trim() || undefined,
         description: editDescription || undefined,
         attributes: editAttrs,
+        ...(editColumnId !== card!.columnId ? { columnId: editColumnId } : {}),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['card', boardId, cardId] })
@@ -416,7 +419,8 @@ export default function CardDetail() {
   const isDirty = (!!card && editing && (
     editTitle !== card.title ||
     editDescription !== (card.description ?? '') ||
-    JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {})
+    JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {}) ||
+    editColumnId !== card.columnId
   )) || commentDraft.trim() !== '' || commentEditDirty
 
   // Block in-app navigation (React Router links, browser back/forward within SPA)
@@ -443,7 +447,8 @@ export default function CardDetail() {
   const isCardDirty = editing && (
     editTitle !== card.title ||
     editDescription !== (card.description ?? '') ||
-    JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {})
+    JSON.stringify(editAttrs) !== JSON.stringify(card.attributes ?? {}) ||
+    editColumnId !== card.columnId
   )
   const titleDirty = editing && editTitle !== card.title
   const descDirty  = editing && editDescription !== (card.description ?? '')
@@ -453,6 +458,7 @@ export default function CardDetail() {
     setEditTitle(card.title)
     setEditDescription(card.description ?? '')
     setEditAttrs({ ...(card.attributes ?? {}) })
+    setEditColumnId(card.columnId)
     setEditing(false)
   }
 
@@ -635,10 +641,6 @@ export default function CardDetail() {
             <span className="sidebar-field-value"><TypeBadge type={card.type} /></span>
           </div>
           <div className="sidebar-field">
-            <span className="sidebar-field-label">Column</span>
-            <span className="sidebar-field-value">{columnName}</span>
-          </div>
-          <div className="sidebar-field">
             <span className="sidebar-field-label">Created</span>
             <span className="sidebar-field-value">{new Date(card.createdAt).toLocaleDateString()}</span>
           </div>
@@ -649,8 +651,7 @@ export default function CardDetail() {
         </div>
 
         {/* Attribute sidebar fields — non-markdown schema fields */}
-        {schemaFields.length > 0 && (
-          <div className="sidebar-section">
+        <div className="sidebar-section">
             <div className="sidebar-section-header">
               <button
                 className="sidebar-section-accordion"
@@ -672,35 +673,59 @@ export default function CardDetail() {
             </div>
 
             {attrOpen && (editing ? (
-              schemaFields
-                .filter((f) => f.type !== 'markdown')
-                .map((f) => {
-                  const dirty = attrDirty(f.key)
-                  return (
-                    <div key={f.key} style={{ marginBottom: 10 }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>
-                        {f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                        {f.required && <span style={{ color: '#ef4444' }}> *</span>}
-                        {dirty && <span style={{ marginLeft: 5, color: '#3b82f6' }}>✎</span>}
+              <>
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>
+                    Column
+                    {editColumnId !== card.columnId && <span style={{ marginLeft: 5, color: '#3b82f6' }}>✎</span>}
+                  </div>
+                  <div style={editColumnId !== card.columnId ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6' } : {}}>
+                    <select
+                      className="form-select"
+                      value={editColumnId}
+                      onChange={(e) => setEditColumnId(e.target.value)}
+                    >
+                      {columns?.map((col) => (
+                        <option key={col.id} value={col.id}>{col.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                {schemaFields
+                  .filter((f) => f.type !== 'markdown')
+                  .map((f) => {
+                    const dirty = attrDirty(f.key)
+                    return (
+                      <div key={f.key} style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>
+                          {f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                          {f.required && <span style={{ color: '#ef4444' }}> *</span>}
+                          {dirty && <span style={{ marginLeft: 5, color: '#3b82f6' }}>✎</span>}
+                        </div>
+                        <div style={dirty ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6' } : {}}>
+                          <AttributeInput
+                            field={f}
+                            value={editAttrs[f.key]}
+                            onChange={handleAttrChange}
+                            members={members}
+                          />
+                        </div>
                       </div>
-                      <div style={dirty ? { borderRadius: 6, boxShadow: '0 0 0 2px #3b82f6' } : {}}>
-                        <AttributeInput
-                          field={f}
-                          value={editAttrs[f.key]}
-                          onChange={handleAttrChange}
-                          members={members}
-                        />
-                      </div>
-                    </div>
-                  )
-                })
+                    )
+                  })}
+              </>
             ) : (
-              schemaFields.map((f) => (
-                <AttributeRow key={f.key} field={f} value={card.attributes?.[f.key]} nameMap={nameMap} />
-              ))
+              <>
+                <div className="sidebar-field">
+                  <span className="sidebar-field-label">Column</span>
+                  <span className="sidebar-field-value">{columnName}</span>
+                </div>
+                {schemaFields.map((f) => (
+                  <AttributeRow key={f.key} field={f} value={card.attributes?.[f.key]} nameMap={nameMap} />
+                ))}
+              </>
             ))}
           </div>
-        )}
 
         <ActivitySection boardId={boardId!} cardId={cardId!} />
         {isDirty && <div style={{ height: 52 }} />}

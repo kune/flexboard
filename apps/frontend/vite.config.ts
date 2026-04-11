@@ -13,10 +13,15 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: true, // bind to 0.0.0.0 so Docker nginx can reach it via host.docker.internal
     proxy: {
       // Proxy API and SSE requests to the backend during development
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/dex': {
+        target: 'http://localhost:5556',
         changeOrigin: true,
       },
     },

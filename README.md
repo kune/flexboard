@@ -143,7 +143,7 @@ Run only the infrastructure in Docker; the frontend and backend run locally with
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
-Exposed ports: nginx :80, MongoDB :27017, Dex :5556
+Exposed ports: nginx :80 (dev reverse proxy), MongoDB :27017, Dex :5556
 
 ### 2. Install dependencies
 
@@ -155,10 +155,11 @@ pnpm install
 
 `apps/backend/.env.local`:
 ```dotenv
-MONGODB_URI=mongodb://localhost:27017/flexboard
+MONGO_URI=mongodb://localhost:27017/flexboard
 DEX_ISSUER=http://localhost/dex
 DEX_JWKS_URL=http://localhost:5556/dex/keys
 PORT=3001
+HOST=0.0.0.0
 ```
 
 `apps/frontend/.env.local`:

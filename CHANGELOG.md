@@ -5,7 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Column selector in card edit view: Column is now the first row in the Attributes sidebar section (view and edit); a `<select>` dropdown in edit mode moves the card to the chosen column without drag-and-drop (useful on touch interfaces); includes dirty-ring, ✎ indicator, and navigation-guard support consistent with all other attributes
+
 ### Fixed
+- Development mode: `docker-compose.dev.yml` disabled the `frontend` service (the only nginx container), leaving nothing on port 80; added a dedicated lightweight nginx service with `docker/nginx-dev.conf` that proxies `/dex/*` → Dex container, `/api/*` → local backend dev server (`:3001`), and `/*` → Vite dev server (`:5173`) including HMR WebSocket
+- Development mode: Vite dev server and Fastify both defaulted to binding on `127.0.0.1`; Docker's nginx reaches the host via `host.docker.internal` (a different IP), so both would refuse connections — fixed by adding `host: true` to `vite.config.ts` and `HOST=0.0.0.0` to the backend dev env
+- Development mode: backend `dev` script did not load `.env.local`, so `PORT`, `MONGO_URI`, and `DEX_JWKS_URL` overrides were silently ignored — fixed by adding `--env-file-if-exists .env.local` to the `tsx watch` invocation (requires Node 22.13+)
+- Development mode: README and `.env.local` template used `MONGODB_URI` but `db.ts` reads `MONGO_URI`; corrected to `MONGO_URI`
+- Development mode: `seed.ts` resolved `config/card-types.yaml` relative to `process.cwd()`, which is `/app` in Docker but `apps/backend` when run via `pnpm --filter` — fixed by probing both paths and using whichever exists
+- Development mode: Vite proxy targeted `http://localhost:3000` for `/api` but the backend dev env sets `PORT=3001`; corrected to `3001` and added a `/dex` proxy entry for OIDC flows when accessing via Vite directly
 - OIDC login on deployments with self-signed certificates: pre-seed `UserManager` metadata so oidc-client-ts skips the discovery fetch (a JavaScript `fetch()` that fails before user interaction on untrusted certs); disable `automaticSilentRenew` to prevent the `prompt=none` redirect loop caused by Dex's local-password connector not returning `login_required`
 
 ## [0.2.0] - 2026-04-10

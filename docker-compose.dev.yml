@@ -6,7 +6,7 @@ name: flexboard
 services:
 
   # In development, frontend and backend run via pnpm dev (hot reload).
-  # Only infrastructure services (MongoDB, Dex) run in Docker.
+  # Only infrastructure services (MongoDB, Dex, nginx) run in Docker.
 
   frontend:
     # Disable in dev — run with: pnpm --filter @flexboard/frontend dev
@@ -15,6 +15,22 @@ services:
   backend:
     # Disable in dev — run with: pnpm --filter @flexboard/backend dev
     profiles: ["disabled"]
+
+  # Lightweight nginx reverse proxy so http://localhost works in dev, routing:
+  #   /dex/*  → Dex container (:5556)
+  #   /api/*  → local backend dev server (:3001)
+  #   /*      → local Vite dev server (:5173, includes HMR WebSocket)
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    volumes:
+      - ./docker/nginx-dev.conf:/etc/nginx/conf.d/default.conf:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - dex
+    restart: unless-stopped
 
   mongodb:
     ports:
