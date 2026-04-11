@@ -120,6 +120,7 @@
 | ✅ | Board settings panel | `BoardMembers.tsx` modal: list members with enriched profiles, invite by email + role, change role dropdown, remove button |
 | ⬜ | User management (Dex config) | Document admin workflow for adding/removing users in `config/dex.yaml` |
 | ✅ | Column selector in card edit view | Column is the first row in the Attributes sidebar section; `<select>` dropdown in edit mode saves `columnId` via existing PATCH endpoint; dirty-ring, ✎ indicator, and navigation-guard consistent with other attributes (touch-friendly alternative to drag-and-drop) |
+| ✅ | Board edit mode | Owner-only toggle in board toolbar; board starts in view mode (cards remain fully interactive); edit mode unlocks: column ← → reorder buttons, column delete (cascade-deletes cards, confirmation required), add column modal, Members modal, Delete board (confirmation required); non-owners and editors never see the edit toggle |
 | ⬜ | Card linking | Link cards to each other; display in sidebar |
 | ⬜ | Acceptance criteria checklist rendering | Interactive checkboxes in card detail |
 | ⬜ | Full-text search with highlighted matches | `$text` index or Atlas Search |

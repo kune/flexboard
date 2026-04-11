@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Column selector in card edit view: Column is now the first row in the Attributes sidebar section (view and edit); a `<select>` dropdown in edit mode moves the card to the chosen column without drag-and-drop (useful on touch interfaces); includes dirty-ring, ✎ indicator, and navigation-guard support consistent with all other attributes
+- Board edit mode: board toolbar shows an "Edit board" button for owners only; board defaults to view mode where cards remain fully interactive but board structure is locked; activating edit mode reveals column ← → reorder buttons, column delete with confirmation (cascades to cards), add column, Members management, and Delete board with confirmation
 
 ### Fixed
 - Development mode: `docker-compose.dev.yml` disabled the `frontend` service (the only nginx container), leaving nothing on port 80; added a dedicated lightweight nginx service with `docker/nginx-dev.conf` that proxies `/dex/*` → Dex container, `/api/*` → local backend dev server (`:3001`), and `/*` → Vite dev server (`:5173`) including HMR WebSocket

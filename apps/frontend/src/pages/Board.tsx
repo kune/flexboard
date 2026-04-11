@@ -29,11 +29,15 @@ import {
   createColumn,
   createCard,
   updateCard,
+  updateColumn,
+  deleteColumn,
+  deleteBoard,
 } from '@/lib/api'
 import { getUser } from '@/lib/auth'
 import { useUiStore } from '@/store/uiStore'
 import { useBoardSSE } from '@/hooks/useBoardSSE'
 import BoardMembers from '@/components/BoardMembers'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -217,9 +221,15 @@ interface KColumnProps {
   cards: Card[]
   boardId: string
   nameMap: Map<string, string>
+  editMode?: boolean
+  isFirst?: boolean
+  isLast?: boolean
+  onMoveLeft?: () => void
+  onMoveRight?: () => void
+  onDelete?: () => void
 }
 
-function KColumn({ col, cards, boardId, nameMap }: KColumnProps) {
+function KColumn({ col, cards, boardId, nameMap, editMode, isFirst, isLast, onMoveLeft, onMoveRight, onDelete }: KColumnProps) {
   const [addingCard, setAddingCard] = useState(false)
   const cardIds = cards.map((c) => c.id)
 
@@ -232,6 +242,27 @@ function KColumn({ col, cards, boardId, nameMap }: KColumnProps) {
           {col.name}
           <span className="col-count">{cards.length}</span>
         </div>
+        {editMode && (
+          <div className="col-edit-controls">
+            <button
+              className="col-edit-btn"
+              onClick={onMoveLeft}
+              disabled={isFirst}
+              title="Move left"
+            >←</button>
+            <button
+              className="col-edit-btn"
+              onClick={onMoveRight}
+              disabled={isLast}
+              title="Move right"
+            >→</button>
+            <button
+              className="col-edit-btn danger"
+              onClick={onDelete}
+              title="Delete column"
+            >✕</button>
+          </div>
+        )}
       </div>
 
       <SortableContext items={cardIds} strategy={verticalListSortingStrategy} id={col.id}>
@@ -309,8 +340,13 @@ function AddColumnModal({ boardId, onClose }: { boardId: string; onClose: () => 
 
 export default function Board() {
   const { id: boardId } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const [editMode, setEditMode] = useState(false)
   const [showAddCol, setShowAddCol] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
+  const [confirm, setConfirm] = useState<{
+    message: string; detail?: string; confirmLabel?: string; onConfirm: () => void
+  } | null>(null)
   const [currentUserSub, setCurrentUserSub] = useState<string | null>(null)
   const [activeCard, setActiveCard] = useState<Card | null>(null)
   const [localCards, setLocalCards] = useState<Card[] | null>(null)
@@ -361,6 +397,7 @@ export default function Board() {
   })
 
   const nameMap = new Map(members?.map((m) => [m.userId, m.name]) ?? [])
+  const isOwner = !!(currentUserSub && members?.find((m) => m.userId === currentUserSub)?.role === 'owner')
 
   useEffect(() => {
     setBoardCrumb(boardId ?? null, board?.name ?? null)
@@ -407,6 +444,29 @@ export default function Board() {
     onError: () => qc.invalidateQueries({ queryKey: ['cards', boardId] }),
   })
 
+  const moveColumnMutation = useMutation({
+    mutationFn: ({ colId, swapColId, posA, posB }: {
+      colId: string; swapColId: string; posA: number; posB: number
+    }) => Promise.all([
+      updateColumn(boardId!, colId, { position: posB }),
+      updateColumn(boardId!, swapColId, { position: posA }),
+    ]),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['columns', boardId] }),
+  })
+
+  const deleteColumnMutation = useMutation({
+    mutationFn: (colId: string) => deleteColumn(boardId!, colId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['columns', boardId] })
+      qc.invalidateQueries({ queryKey: ['cards', boardId] })
+    },
+  })
+
+  const deleteBoardMutation = useMutation({
+    mutationFn: () => deleteBoard(boardId!),
+    onSuccess: () => navigate('/'),
+  })
+
   // Touch: delay+tolerance prevents scroll-swipe from triggering a drag.
   // Mouse: distance-only for snappy desktop feel.
   const sensors = useSensors(
@@ -421,6 +481,27 @@ export default function Board() {
 
   const cardsForColumn = (colId: string) =>
     displayCards.filter((c) => c.columnId === colId).sort((a, b) => a.position - b.position)
+
+  const handleDeleteColumn = (col: Column) => {
+    const count = cardsForColumn(col.id).length
+    setConfirm({
+      message: `Delete column "${col.name}"?`,
+      detail: count > 0
+        ? `This will permanently delete ${count} card${count !== 1 ? 's' : ''}.`
+        : 'This action cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: () => { deleteColumnMutation.mutate(col.id); setConfirm(null) },
+    })
+  }
+
+  const handleDeleteBoard = () => {
+    setConfirm({
+      message: `Delete board "${board?.name}"?`,
+      detail: 'All columns and cards will be permanently deleted. This action cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: () => { deleteBoardMutation.mutate(); setConfirm(null) },
+    })
+  }
 
   const handleDragStart = (event: DragStartEvent) => {
     const card = displayCards.find((c) => c.id === event.active.id)
@@ -490,10 +571,25 @@ export default function Board() {
   return (
     <>
       <div className="board-toolbar">
+        {editMode && <span className="board-edit-badge">Editing</span>}
         <div style={{ flex: 1 }} />
-        <button className="btn btn-secondary btn-sm" onClick={() => setShowMembers(true)}>
-          Members
-        </button>
+        {editMode ? (
+          <>
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowMembers(true)}>
+              Members
+            </button>
+            <button className="btn btn-danger btn-sm" onClick={handleDeleteBoard}>
+              Delete board
+            </button>
+            <button className="btn btn-primary btn-sm" onClick={() => setEditMode(false)}>
+              Done
+            </button>
+          </>
+        ) : isOwner && (
+          <button className="btn btn-secondary btn-sm" onClick={() => setEditMode(true)}>
+            Edit board
+          </button>
+        )}
       </div>
 
       <DndContext
@@ -504,19 +600,33 @@ export default function Board() {
         onDragEnd={handleDragEnd}
       >
         <div className="kanban-wrap" ref={scrollRef}>
-          {sortedColumns.map((col) => (
+          {sortedColumns.map((col, idx) => (
             <KColumn
               key={col.id}
               col={col}
               cards={cardsForColumn(col.id)}
               boardId={boardId!}
               nameMap={nameMap}
+              editMode={editMode}
+              isFirst={idx === 0}
+              isLast={idx === sortedColumns.length - 1}
+              onMoveLeft={() => {
+                const prev = sortedColumns[idx - 1]
+                if (prev) moveColumnMutation.mutate({ colId: col.id, swapColId: prev.id, posA: col.position, posB: prev.position })
+              }}
+              onMoveRight={() => {
+                const next = sortedColumns[idx + 1]
+                if (next) moveColumnMutation.mutate({ colId: col.id, swapColId: next.id, posA: col.position, posB: next.position })
+              }}
+              onDelete={() => handleDeleteColumn(col)}
             />
           ))}
 
-          <button className="kanban-add-col" onClick={() => setShowAddCol(true)}>
-            + Add column
-          </button>
+          {editMode && (
+            <button className="kanban-add-col" onClick={() => setShowAddCol(true)}>
+              + Add column
+            </button>
+          )}
         </div>
 
         <DragOverlay>
@@ -544,6 +654,16 @@ export default function Board() {
           boardId={boardId!}
           currentUserSub={currentUserSub}
           onClose={() => setShowMembers(false)}
+        />
+      )}
+      {confirm && (
+        <ConfirmDialog
+          message={confirm.message}
+          detail={confirm.detail}
+          confirmLabel={confirm.confirmLabel}
+          danger
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm(null)}
         />
       )}
     </>
