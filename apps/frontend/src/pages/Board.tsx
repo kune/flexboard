@@ -642,13 +642,15 @@ export default function Board() {
           <span className="board-toolbar-title">{board?.name}</span>
         )}
         <div style={{ flex: 1 }} />
-        <button
-          className="btn btn-primary btn-sm"
-          onClick={() => setShowAddCard(true)}
-          disabled={sortedColumns.length === 0}
-        >
-          + Add card
-        </button>
+        {!editMode && (
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => setShowAddCard(true)}
+            disabled={sortedColumns.length === 0}
+          >
+            + Add card
+          </button>
+        )}
         {editMode ? (
           <>
             <button className="btn btn-secondary btn-sm" onClick={() => setShowMembers(true)}>
