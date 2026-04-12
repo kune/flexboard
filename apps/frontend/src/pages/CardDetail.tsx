@@ -67,7 +67,7 @@ function toggleCheckbox(markdown: string, index: number): string {
 function makeCheckboxComponents(onToggle: (i: number) => void) {
   let idx = 0
   return {
-    input({ type, checked }: { type?: string; checked?: boolean; [key: string]: unknown }) {
+    input({ type, checked }: React.ComponentProps<'input'> & { node?: object }) {
       if (type !== 'checkbox') return null
       const i = idx++
       return <input type="checkbox" checked={!!checked} onChange={() => onToggle(i)} />
