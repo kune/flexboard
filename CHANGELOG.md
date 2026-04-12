@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-12
+
+### Added
+- Version display in nav bar: current frontend version shown as small muted text on desktop (≥ 640 px); turns amber with a ⚠ indicator when the frontend and backend versions differ (useful after a partial image update)
+
+### Fixed
+- Board deletion no longer leaves the deleted board visible on the dashboard — the boards query is now invalidated before navigating back to `/`
+
 ## [0.3.0] - 2026-04-12
 
 ### Added
