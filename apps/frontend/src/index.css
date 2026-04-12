@@ -1174,8 +1174,6 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
     overflow-y: auto;
     max-height: calc(100vh - 52px);
   }
-  /* Hide accordion caret on desktop (attributes always open) */
-  .sidebar-accordion-icon { display: none; }
   /* Topbar: prevent wrapping on desktop */
   .detail-topbar { flex-wrap: nowrap; }
   .detail-topbar-actions { flex-wrap: nowrap; }
