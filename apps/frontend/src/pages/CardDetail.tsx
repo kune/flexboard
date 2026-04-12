@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, useBlocker, useLocation, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
@@ -32,16 +32,89 @@ function timeAgo(iso: string): string {
   return `${Math.floor(h / 24)}d ago`
 }
 
-function activityLabel(event: string, payload: Record<string, unknown>): string {
+function truncate(str: string, len = 35): string {
+  return str.length > len ? str.slice(0, len) + '…' : str
+}
+
+function formatAttrValue(
+  val: unknown,
+  field: AttributeFieldSchema | undefined,
+  nameMap: Map<string, string>,
+): string {
+  if (val === null || val === undefined || val === '') return '—'
+  if (Array.isArray(val)) return val.join(', ')
+  if (field?.type === 'date') {
+    try { return new Date(val as string).toLocaleDateString() } catch { return String(val) }
+  }
+  if (field?.type === 'reference') return nameMap.get(val as string) ?? String(val)
+  return String(val)
+}
+
+function activityDescription(
+  event: string,
+  payload: Record<string, unknown>,
+  columnMap: Map<string, string>,
+  nameMap: Map<string, string>,
+  schemaFields: AttributeFieldSchema[],
+) {
   switch (event) {
-    case 'card.created': return `Created as ${payload.type}`
+    case 'card.created':
+      return <>created this card as <strong>{String(payload.type)}</strong></>
+
+    case 'card.moved': {
+      const toName = columnMap.get(payload.toColumnId as string) ?? 'unknown column'
+      if (payload.fromColumnId) {
+        const fromName = columnMap.get(payload.fromColumnId as string) ?? 'unknown column'
+        return <>moved from <strong>{fromName}</strong> to <strong>{toName}</strong></>
+      }
+      return <>moved to <strong>{toName}</strong></>
+    }
+
     case 'card.updated': {
       const fields = (payload.fields as string[] | undefined) ?? []
-      return `Updated ${fields.join(', ') || 'card'}`
+      const changes = payload.changes as Record<string, unknown> | undefined
+      const parts: React.ReactNode[] = []
+
+      if (fields.includes('title')) {
+        if (changes?.title) {
+          const { from, to } = changes.title as { from: string; to: string }
+          parts.push(<>renamed from <strong>"{truncate(from)}"</strong> to <strong>"{truncate(to)}"</strong></>)
+        } else {
+          parts.push(<>updated the title</>)
+        }
+      }
+      if (fields.includes('description')) {
+        parts.push(<>updated the description</>)
+      }
+      if (fields.includes('attributes')) {
+        if (changes?.attributes) {
+          const attrChanges = changes.attributes as Record<string, { from: unknown; to: unknown }>
+          for (const [key, { from, to }] of Object.entries(attrChanges)) {
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+            const field = schemaFields.find((f) => f.key === key)
+            const isEmpty = (v: unknown) => v === null || v === undefined || v === ''
+            if (isEmpty(from)) {
+              parts.push(<>set <strong>{label}</strong> to <strong>{formatAttrValue(to, field, nameMap)}</strong></>)
+            } else if (isEmpty(to)) {
+              parts.push(<>cleared <strong>{label}</strong></>)
+            } else {
+              parts.push(<>changed <strong>{label}</strong> from <strong>{formatAttrValue(from, field, nameMap)}</strong> to <strong>{formatAttrValue(to, field, nameMap)}</strong></>)
+            }
+          }
+        } else {
+          parts.push(<>updated attributes</>)
+        }
+      }
+
+      if (parts.length === 0) return <>updated the card</>
+      return <>{parts.map((p, i) => <span key={i}>{i > 0 && ', '}{p}</span>)}</>
     }
-    case 'card.moved': return 'Moved to another column'
-    case 'comment.added': return 'Added a comment'
-    default: return event
+
+    case 'comment.added':
+      return <>added a comment</>
+
+    default:
+      return <>{event}</>
   }
 }
 
@@ -280,7 +353,16 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap, emailMap, draft
 
 // ── Activity section ──────────────────────────────────────
 
-function ActivitySection({ boardId, cardId }: { boardId: string; cardId: string }) {
+function ActivitySection({
+  boardId, cardId, nameMap, emailMap, columnMap, schemaFields,
+}: {
+  boardId: string
+  cardId: string
+  nameMap: Map<string, string>
+  emailMap: Map<string, string>
+  columnMap: Map<string, string>
+  schemaFields: AttributeFieldSchema[]
+}) {
   const [open, setOpen] = useState(false)
   const { data: entries = [] } = useQuery({
     queryKey: ['activity', boardId, cardId],
@@ -303,15 +385,21 @@ function ActivitySection({ boardId, cardId }: { boardId: string; cardId: string 
       </div>
       {open && (
         <div className="activity-list">
-          {entries.map((e) => (
-            <div key={e.id} className="activity-item">
-              <div className="activity-dot" />
-              <div className="activity-body">
-                <div className="activity-text">{activityLabel(e.event, e.payload)}</div>
-                <div className="activity-time">{timeAgo(e.createdAt)}</div>
+          {entries.map((e) => {
+            const actorName = nameMap.get(e.actorId) ?? e.actorId
+            return (
+              <div key={e.id} className="activity-item">
+                <UserAvatar name={actorName} email={emailMap.get(e.actorId)} sub={e.actorId} size={24} />
+                <div className="activity-body">
+                  <div className="activity-text">
+                    <strong>{actorName}</strong>{' '}
+                    {activityDescription(e.event, e.payload, columnMap, nameMap, schemaFields)}
+                  </div>
+                  <div className="activity-time">{timeAgo(e.createdAt)}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
@@ -372,6 +460,7 @@ export default function CardDetail() {
 
   const nameMap = new Map(members?.map((m) => [m.userId, m.name]) ?? [])
   const emailMap = new Map(members?.map((m) => [m.userId, m.email]) ?? [])
+  const columnMap = new Map(columns?.map((c) => [c.id, c.name]) ?? [])
 
   // Current user sub from localStorage (set by oidc-client-ts)
   const currentSub: string = (() => {
@@ -790,7 +879,7 @@ export default function CardDetail() {
             ))}
           </div>
 
-        <ActivitySection boardId={boardId!} cardId={cardId!} />
+        <ActivitySection boardId={boardId!} cardId={cardId!} nameMap={nameMap} emailMap={emailMap} columnMap={columnMap} schemaFields={schemaFields} />
         {isDirty && <div style={{ height: 52 }} />}
       </div>
     </div>

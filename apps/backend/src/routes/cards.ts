@@ -99,6 +99,14 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
         position?: number
         attributes?: Record<string, unknown>
       }
+
+      // Capture old values before mutation (for activity log detail)
+      const oldTitle = card.title
+      const fromColumnId = card.columnId.toString()
+      const oldAttrs: Record<string, unknown> = card.attributes instanceof Map
+        ? Object.fromEntries(card.attributes as Map<string, unknown>)
+        : { ...(card.attributes ?? {}) as Record<string, unknown> }
+
       const changedFields: string[] = []
       const movedToColumn = columnId !== undefined && mongoose.isValidObjectId(columnId) && card.columnId.toString() !== columnId
       if (columnId !== undefined && mongoose.isValidObjectId(columnId)) { card.columnId = new mongoose.Types.ObjectId(columnId); changedFields.push('columnId') }
@@ -107,23 +115,41 @@ export async function cardRoutes(app: FastifyInstance): Promise<void> {
       if (position !== undefined) { card.position = position }
       if (attributes !== undefined) { card.attributes = attributes; changedFields.push('attributes') }
       await card.save()
+
       if (movedToColumn) {
         await ActivityLog.create({
           cardId: card._id,
           boardId: new mongoose.Types.ObjectId(boardId),
           actorId: sub,
           event: 'card.moved',
-          payload: { toColumnId: columnId },
+          payload: { fromColumnId, toColumnId: columnId },
         })
         broadcast(boardId, 'card.moved', { boardId, cardId: card.id, toColumnId: columnId })
       } else if (changedFields.some((f) => f !== 'columnId')) {
         const fields = changedFields.filter((f) => f !== 'columnId')
+        const changes: Record<string, unknown> = {}
+        if (fields.includes('title')) {
+          changes.title = { from: oldTitle, to: card.title }
+        }
+        if (fields.includes('attributes') && attributes !== undefined) {
+          const newAttrs = attributes as Record<string, unknown>
+          const attrChanges: Record<string, { from: unknown; to: unknown }> = {}
+          const allKeys = new Set([...Object.keys(oldAttrs), ...Object.keys(newAttrs)])
+          for (const key of allKeys) {
+            const ov = oldAttrs[key] ?? null
+            const nv = newAttrs[key] ?? null
+            if (JSON.stringify(ov) !== JSON.stringify(nv)) {
+              attrChanges[key] = { from: ov, to: nv }
+            }
+          }
+          if (Object.keys(attrChanges).length > 0) changes.attributes = attrChanges
+        }
         await ActivityLog.create({
           cardId: card._id,
           boardId: new mongoose.Types.ObjectId(boardId),
           actorId: sub,
           event: 'card.updated',
-          payload: { fields },
+          payload: { fields, ...(Object.keys(changes).length > 0 ? { changes } : {}) },
         })
         broadcast(boardId, 'card.updated', { boardId, cardId: card.id, fields })
       }
