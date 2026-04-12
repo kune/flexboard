@@ -21,6 +21,7 @@ export default function Nav({ user }: NavProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [crumbExpanded, setCrumbExpanded] = useState(false)
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null)
+  const [gravatarMissing, setGravatarMissing] = useState(false)
   const boardId = useUiStore((s) => s.boardId)
   const boardName = useUiStore((s) => s.boardName)
   const cardTitle = useUiStore((s) => s.cardTitle)
@@ -109,7 +110,7 @@ export default function Nav({ user }: NavProps) {
           aria-label="User menu"
         >
           {avatarSrc
-            ? <img src={avatarSrc} alt={initials} className="nav-avatar-img" onError={() => setAvatarSrc(null)} />
+            ? <img src={avatarSrc} alt={initials} className="nav-avatar-img" onError={() => { setAvatarSrc(null); setGravatarMissing(true) }} />
             : initials}
         </button>
 
@@ -124,6 +125,17 @@ export default function Nav({ user }: NavProps) {
                 <div className="nav-dropdown-name">{displayName}</div>
                 <div className="nav-dropdown-email">{displayEmail}</div>
               </div>
+              {gravatarMissing && (
+                <a
+                  className="nav-dropdown-item"
+                  href="https://gravatar.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  Set up profile picture
+                </a>
+              )}
               <button
                 className="nav-dropdown-item danger"
                 onClick={() => { setDropdownOpen(false); signOut().catch(console.error) }}
