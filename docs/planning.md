@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-10 (FR-10 fully implemented incl. fullscreen description editor; init.sh bugs fixed)  
+> **Last updated:** 2026-04-12 (v0.3.0: board edit mode, board description, add-card modal, checklist rendering)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---

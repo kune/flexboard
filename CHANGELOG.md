@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-12
+
 ### Added
 - Acceptance criteria checklist rendering: `- [ ]`/`- [x]` task list items in card description and markdown attribute fields render as interactive checkboxes in view mode; clicking a checkbox immediately toggles and saves via `PATCH`; edit mode shows the raw markdown as before
 - Board title displayed in board toolbar: board name shown on the left side of the toolbar in view mode (same position becomes an editable input in edit mode)
