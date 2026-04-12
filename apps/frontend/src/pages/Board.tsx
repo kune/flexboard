@@ -490,7 +490,10 @@ export default function Board() {
 
   const deleteBoardMutation = useMutation({
     mutationFn: () => deleteBoard(boardId!),
-    onSuccess: () => navigate('/'),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['boards'] })
+      navigate('/')
+    },
   })
 
   const updateBoardDescMutation = useMutation({
