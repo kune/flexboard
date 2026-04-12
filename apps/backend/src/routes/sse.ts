@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import mongoose from 'mongoose'
 import { verifyToken } from '../lib/auth.js'
 import { canRead } from '../lib/permissions.js'
-import { subscribe, unsubscribe } from '../lib/sse.js'
+import { subscribe, unsubscribe, subscribeUser, unsubscribeUser } from '../lib/sse.js'
 import { Board } from '../models/board.js'
 
 export async function sseRoutes(app: FastifyInstance): Promise<void> {
@@ -43,6 +43,38 @@ export async function sseRoutes(app: FastifyInstance): Promise<void> {
     req.raw.on('close', () => {
       clearInterval(keepalive)
       unsubscribe(boardId, res)
+    })
+  })
+
+  // ── User-level event stream ───────────────────────────────
+  // Notifies the authenticated user about cross-board changes
+  // (e.g. being added to / removed from a board).
+  app.get('/api/v1/events', async (req, reply) => {
+    const { token } = req.query as { token?: string }
+
+    if (!token) return reply.code(401).send({ error: 'token is required' })
+    const payload = await verifyToken(token)
+    if (!payload?.sub) return reply.code(401).send({ error: 'Invalid or expired token' })
+
+    reply.hijack()
+    const res = reply.raw
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    })
+    res.write(': connected\n\n')
+
+    subscribeUser(payload.sub, res)
+
+    const keepalive = setInterval(() => {
+      try { res.write(': keepalive\n\n') } catch { clearInterval(keepalive) }
+    }, 25_000)
+
+    req.raw.on('close', () => {
+      clearInterval(keepalive)
+      unsubscribeUser(payload.sub, res)
     })
   })
 }

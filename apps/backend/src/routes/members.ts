@@ -4,6 +4,7 @@ import { requireAuth, type AuthPayload } from '../lib/auth.js'
 import { canRead, isOwner, getMemberRole } from '../lib/permissions.js'
 import { Board } from '../models/board.js'
 import { User } from '../models/user.js'
+import { emitToUser } from '../lib/sse.js'
 import type { UserRole } from '@flexboard/shared'
 
 type AuthRequest = { user: AuthPayload }
@@ -70,6 +71,7 @@ export async function memberRoutes(app: FastifyInstance): Promise<void> {
 
     board.members.push({ userId: invitee.sub, role })
     await board.save()
+    emitToUser(invitee.sub, 'boards.changed', { boardId: id })
     return reply.code(201).send({ userId: invitee.sub, role, email: invitee.email, name: invitee.name })
   })
 
@@ -98,6 +100,7 @@ export async function memberRoutes(app: FastifyInstance): Promise<void> {
 
     member.role = role
     await board.save()
+    emitToUser(userId, 'boards.changed', { boardId: id })
     return { userId, role }
   })
 
@@ -121,6 +124,7 @@ export async function memberRoutes(app: FastifyInstance): Promise<void> {
 
     board.members = board.members.filter((m) => m.userId !== userId)
     await board.save()
+    emitToUser(userId, 'boards.changed', { boardId: id })
     return reply.code(204).send()
   })
 }

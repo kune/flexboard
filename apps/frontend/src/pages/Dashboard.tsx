@@ -5,6 +5,7 @@ import type { Board } from '@flexboard/shared'
 import { useUiStore } from '@/store/uiStore'
 import { getUser } from '@/lib/auth'
 import { getBoards, createBoard } from '@/lib/api'
+import { useUserSSE } from '@/hooks/useUserSSE'
 
 const ACCENT_COLORS = ['#2563eb', '#7c3aed', '#16a34a', '#ea580c', '#dc2626', '#0891b2']
 
@@ -128,6 +129,8 @@ export default function Dashboard() {
   const [showNewBoard, setShowNewBoard] = useState(false)
   const [currentUserSub, setCurrentUserSub] = useState<string | null>(null)
   const setBoardCrumb = useUiStore((s) => s.setBoardCrumb)
+
+  useUserSSE()
 
   useEffect(() => { setBoardCrumb(null, null) }, [setBoardCrumb])
   useEffect(() => { getUser().then((u) => setCurrentUserSub(u?.profile.sub ?? null)) }, [])
