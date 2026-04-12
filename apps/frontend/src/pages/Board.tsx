@@ -41,24 +41,12 @@ import { useUiStore } from '@/store/uiStore'
 import { useBoardSSE } from '@/hooks/useBoardSSE'
 import BoardMembers from '@/components/BoardMembers'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import UserAvatar from '@/components/UserAvatar'
 
 // ── Helpers ───────────────────────────────────────────────
 
 function TypeBadge({ type }: { type: string }) {
   return <span className={`badge badge-${type}`}>{type}</span>
-}
-
-const AVATAR_COLORS = ['av-blue', 'av-purple', 'av-green', 'av-orange', 'av-red']
-function avatarColor(sub: string): string {
-  let h = 0
-  for (let i = 0; i < sub.length; i++) h = (h * 31 + sub.charCodeAt(i)) >>> 0
-  return AVATAR_COLORS[h % AVATAR_COLORS.length]
-}
-
-function nameInitials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-  return name.slice(0, 2).toUpperCase()
 }
 
 // ── Card Item ─────────────────────────────────────────────
@@ -67,9 +55,10 @@ interface KCardProps {
   card: Card
   boardId: string
   nameMap: Map<string, string>
+  emailMap: Map<string, string>
 }
 
-function KCard({ card, boardId, nameMap }: KCardProps) {
+function KCard({ card, boardId, nameMap, emailMap }: KCardProps) {
   const navigate = useNavigate()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: card.id,
@@ -116,13 +105,13 @@ function KCard({ card, boardId, nameMap }: KCardProps) {
             <span className={`prio-dot prio-${priority}`} title={priority} />
           )}
           {assigneeName && (
-            <span
-              className={`avatar avatar-sm ${avatarColor(assigneeSub!)}`}
-              title={assigneeName}
+            <UserAvatar
+              name={assigneeName}
+              email={emailMap.get(assigneeSub!)}
+              sub={assigneeSub!}
+              size={22}
               style={{ marginLeft: 'auto' }}
-            >
-              {nameInitials(assigneeName)}
-            </span>
+            />
           )}
         </div>
       )}
@@ -251,6 +240,7 @@ interface KColumnProps {
   cards: Card[]
   boardId: string
   nameMap: Map<string, string>
+  emailMap: Map<string, string>
   editMode?: boolean
   isFirst?: boolean
   isLast?: boolean
@@ -259,7 +249,7 @@ interface KColumnProps {
   onDelete?: () => void
 }
 
-function KColumn({ col, cards, boardId, nameMap, editMode, isFirst, isLast, onMoveLeft, onMoveRight, onDelete }: KColumnProps) {
+function KColumn({ col, cards, boardId, nameMap, emailMap, editMode, isFirst, isLast, onMoveLeft, onMoveRight, onDelete }: KColumnProps) {
   const cardIds = cards.map((c) => c.id)
 
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: col.id })
@@ -297,7 +287,7 @@ function KColumn({ col, cards, boardId, nameMap, editMode, isFirst, isLast, onMo
       <SortableContext items={cardIds} strategy={verticalListSortingStrategy} id={col.id}>
         <div ref={setDropRef} className="kanban-col-body" data-column-id={col.id}>
           {cards.map((card) => (
-            <KCard key={card.id} card={card} boardId={boardId} nameMap={nameMap} />
+            <KCard key={card.id} card={card} boardId={boardId} nameMap={nameMap} emailMap={emailMap} />
           ))}
         </div>
       </SortableContext>
@@ -425,6 +415,7 @@ export default function Board() {
   })
 
   const nameMap = new Map(members?.map((m) => [m.userId, m.name]) ?? [])
+  const emailMap = new Map(members?.map((m) => [m.userId, m.email]) ?? [])
   const isOwner = !!(currentUserSub && members?.find((m) => m.userId === currentUserSub)?.role === 'owner')
 
   useEffect(() => {
@@ -789,6 +780,7 @@ export default function Board() {
               cards={cardsForColumn(col.id)}
               boardId={boardId!}
               nameMap={nameMap}
+              emailMap={emailMap}
               editMode={editMode}
               isFirst={idx === 0}
               isLast={idx === sortedColumns.length - 1}

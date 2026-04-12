@@ -14,6 +14,7 @@ import { useBoardSSE } from '@/hooks/useBoardSSE'
 import { AttributeRow, AttributeInput, AttributeValue } from '@/components/AttributeField'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import MarkdownEditor from '@/components/MarkdownEditor'
+import UserAvatar from '@/components/UserAvatar'
 
 // ── Helpers ───────────────────────────────────────────────
 
@@ -44,11 +45,6 @@ function activityLabel(event: string, payload: Record<string, unknown>): string 
   }
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-  return name.slice(0, 2).toUpperCase()
-}
 
 function isFieldDirty(a: unknown, b: unknown): boolean {
   return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null)
@@ -82,13 +78,14 @@ interface CommentsSectionProps {
   cardId: string
   currentSub: string
   nameMap: Map<string, string>
+  emailMap: Map<string, string>
   draft: string
   onDraftChange: (v: string) => void
   onEditDirtyChange: (dirty: boolean) => void
   cancelEditSeq: number
 }
 
-function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftChange, onEditDirtyChange, cancelEditSeq }: CommentsSectionProps) {
+function CommentsSection({ boardId, cardId, currentSub, nameMap, emailMap, draft, onDraftChange, onEditDirtyChange, cancelEditSeq }: CommentsSectionProps) {
   const qc = useQueryClient()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editBody, setEditBody] = useState('')
@@ -175,7 +172,7 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftC
 
       {comments.map((c) => (
         <div key={c.id} className="comment-item">
-          <div className="comment-avatar">{initials(nameMap.get(c.authorId) ?? c.authorId)}</div>
+          <UserAvatar name={nameMap.get(c.authorId) ?? c.authorId} email={emailMap.get(c.authorId)} sub={c.authorId} size={28} />
           <div className="comment-body">
             <div className="comment-meta">
               <span className="comment-author">{nameMap.get(c.authorId) ?? c.authorId}</span>
@@ -234,7 +231,7 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap, draft, onDraftC
       ))}
 
       <div className="comment-input-wrap">
-        <div className="comment-avatar">{initials(nameMap.get(currentSub) ?? currentSub)}</div>
+        <UserAvatar name={nameMap.get(currentSub) ?? currentSub} email={emailMap.get(currentSub)} sub={currentSub} size={28} />
         <div style={{ flex: 1 }}>
           <div
             className="comment-input-box"
@@ -362,6 +359,7 @@ export default function CardDetail() {
   })
 
   const nameMap = new Map(members?.map((m) => [m.userId, m.name]) ?? [])
+  const emailMap = new Map(members?.map((m) => [m.userId, m.email]) ?? [])
 
   // Current user sub from localStorage (set by oidc-client-ts)
   const currentSub: string = (() => {
@@ -681,7 +679,7 @@ export default function CardDetail() {
           </>
         )}
 
-        <CommentsSection boardId={boardId!} cardId={cardId!} currentSub={currentSub} nameMap={nameMap} draft={commentDraft} onDraftChange={setCommentDraft} onEditDirtyChange={setCommentEditDirty} cancelEditSeq={commentEditCancelSeq} />
+        <CommentsSection boardId={boardId!} cardId={cardId!} currentSub={currentSub} nameMap={nameMap} emailMap={emailMap} draft={commentDraft} onDraftChange={setCommentDraft} onEditDirtyChange={setCommentEditDirty} cancelEditSeq={commentEditCancelSeq} />
         {isDirty && <div style={{ height: 52 }} />}
       </div>
 
