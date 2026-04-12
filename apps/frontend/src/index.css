@@ -541,8 +541,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 }
 .kanban-add-btn:hover { background: #fff; color: #2563eb; border-color: #93c5fd; }
 .kanban-add-col {
-  flex: 0 0 200px;
-  min-width: 160px;
+  flex: 0 0 calc(100vw - 24px);
   height: 52px;
   background: rgba(255,255,255,.6);
   border: 2px dashed #e2e8f0;
@@ -1127,6 +1126,7 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
     scroll-snap-align: none;
     max-height: calc(100vh - 120px);
   }
+  .kanban-add-col { flex: 0 0 268px; }
   /* Hide column dots on desktop */
   .kanban-dots { display: none; }
 
