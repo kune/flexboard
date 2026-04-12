@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-12 (v0.4.0: Gravatar everywhere, enriched activity log, board overflow menus, inline column rename, user-level SSE, new-card save fixes)  
+> **Last updated:** 2026-04-12 (v0.4.1: fix Docker build producing -dirty version suffix)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
