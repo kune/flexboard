@@ -367,6 +367,7 @@ export default function Board() {
   const [showAddCard, setShowAddCard] = useState(false)
   const [showAddCol, setShowAddCol] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
+  const [showEditOverflow, setShowEditOverflow] = useState(false)
   const [confirm, setConfirm] = useState<{
     message: string; detail?: string; confirmLabel?: string; onConfirm: () => void
   } | null>(null)
@@ -653,12 +654,37 @@ export default function Board() {
         )}
         {editMode ? (
           <>
-            <button className="btn btn-secondary btn-sm" onClick={() => setShowMembers(true)}>
-              Members
-            </button>
-            <button className="btn btn-danger btn-sm" onClick={handleDeleteBoard}>
-              Delete board
-            </button>
+            <div className="board-overflow-wrap">
+              <button
+                className="btn btn-secondary btn-sm board-overflow-btn"
+                onClick={() => setShowEditOverflow((o) => !o)}
+                aria-label="More actions"
+              >
+                ⋯
+              </button>
+              {showEditOverflow && (
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 299 }}
+                    onClick={() => setShowEditOverflow(false)}
+                  />
+                  <div className="board-overflow-menu">
+                    <button
+                      className="board-overflow-item"
+                      onClick={() => { setShowEditOverflow(false); setShowMembers(true) }}
+                    >
+                      Members
+                    </button>
+                    <button
+                      className="board-overflow-item danger"
+                      onClick={() => { setShowEditOverflow(false); handleDeleteBoard() }}
+                    >
+                      Delete board
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
             <button className="btn btn-secondary btn-sm" onClick={() => setEditMode(false)}>
               Done
             </button>

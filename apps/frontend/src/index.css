@@ -243,6 +243,34 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   padding: 2px 8px;
   letter-spacing: 0.3px;
 }
+.board-overflow-wrap { position: relative; }
+.board-overflow-btn { min-width: 36px; letter-spacing: 2px; }
+.board-overflow-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.10);
+  min-width: 160px;
+  z-index: 300;
+  overflow: hidden;
+}
+.board-overflow-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: #374151;
+  text-align: left;
+  cursor: pointer;
+  transition: background .15s;
+}
+.board-overflow-item:hover { background: #f8fafc; }
+.board-overflow-item.danger { color: #dc2626; }
 
 .board-desc {
   background: #fff;
