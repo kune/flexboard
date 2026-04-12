@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { type User } from 'oidc-client-ts'
@@ -10,9 +10,17 @@ interface NavProps {
   user: User
 }
 
+async function gravatarUrl(email: string): Promise<string> {
+  const normalized = email.trim().toLowerCase()
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized))
+  const hash = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
+  return `https://www.gravatar.com/avatar/${hash}?d=404&s=80`
+}
+
 export default function Nav({ user }: NavProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [crumbExpanded, setCrumbExpanded] = useState(false)
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null)
   const boardId = useUiStore((s) => s.boardId)
   const boardName = useUiStore((s) => s.boardName)
   const cardTitle = useUiStore((s) => s.cardTitle)
@@ -30,6 +38,12 @@ export default function Nav({ user }: NavProps) {
 
   const displayName = user.profile.name ?? user.profile.preferred_username ?? user.profile.email ?? user.profile.sub
   const displayEmail = user.profile.email ?? user.profile.preferred_username ?? user.profile.sub
+
+  useEffect(() => {
+    const email = user.profile.email
+    if (!email) return
+    gravatarUrl(email).then(setAvatarSrc)
+  }, [user.profile.email])
 
   const { data: versionData } = useQuery({
     queryKey: ['version'],
@@ -94,7 +108,9 @@ export default function Nav({ user }: NavProps) {
           onClick={() => setDropdownOpen((o) => !o)}
           aria-label="User menu"
         >
-          {initials}
+          {avatarSrc
+            ? <img src={avatarSrc} alt={initials} className="nav-avatar-img" onError={() => setAvatarSrc(null)} />
+            : initials}
         </button>
 
         {dropdownOpen && (
