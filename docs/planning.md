@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-12 (v0.3.0: board edit mode, board description, add-card modal, checklist rendering)  
+> **Last updated:** 2026-04-12 (v0.3.1: version display in nav bar, board-deletion cache fix)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -102,6 +102,7 @@
 | ✅ | Navigation guard | `useBlocker` (React Router data router) + `beforeunload` block in-app and browser-native navigation when card has unsaved changes (FR-07) |
 | ✅ | React Router data router migration | `createBrowserRouter` + `RouterProvider`; `AuthGate` uses `<Outlet />`; required for `useBlocker` |
 | ✅ | User menu (nav bar) | `components/Nav.tsx` — logo, breadcrumb, avatar, sign-out dropdown |
+| ✅ | Version display in nav bar | Frontend version injected at build time via Vite `define` (`__APP_VERSION__`); backend exposes `GET /api/v1/version`; both shown as small muted text on desktop; amber ⚠ indicator when versions differ |
 | ⬜ | Frontend unit tests (Vitest + React Testing Library) | Deferred to Phase 5 |
 
 ---
