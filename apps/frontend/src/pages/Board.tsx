@@ -368,6 +368,7 @@ export default function Board() {
   const [showAddCol, setShowAddCol] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
   const [showEditOverflow, setShowEditOverflow] = useState(false)
+  const [showViewOverflow, setShowViewOverflow] = useState(false)
   const [confirm, setConfirm] = useState<{
     message: string; detail?: string; confirmLabel?: string; onConfirm: () => void
   } | null>(null)
@@ -643,15 +644,6 @@ export default function Board() {
           <span className="board-toolbar-title">{board?.name}</span>
         )}
         <div style={{ flex: 1 }} />
-        {!editMode && (
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={() => setShowAddCard(true)}
-            disabled={sortedColumns.length === 0}
-          >
-            + Add card
-          </button>
-        )}
         {editMode ? (
           <>
             <div className="board-overflow-wrap">
@@ -689,10 +681,43 @@ export default function Board() {
               Done
             </button>
           </>
-        ) : isOwner && (
-          <button className="btn btn-secondary btn-sm" onClick={handleEnterEditMode}>
-            Edit board
-          </button>
+        ) : (
+          <>
+            {isOwner && (
+              <div className="board-overflow-wrap">
+                <button
+                  className="btn btn-secondary btn-sm board-overflow-btn"
+                  onClick={() => setShowViewOverflow((o) => !o)}
+                  aria-label="More actions"
+                >
+                  ⋯
+                </button>
+                {showViewOverflow && (
+                  <>
+                    <div
+                      style={{ position: 'fixed', inset: 0, zIndex: 299 }}
+                      onClick={() => setShowViewOverflow(false)}
+                    />
+                    <div className="board-overflow-menu">
+                      <button
+                        className="board-overflow-item"
+                        onClick={() => { setShowViewOverflow(false); handleEnterEditMode() }}
+                      >
+                        Edit board
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setShowAddCard(true)}
+              disabled={sortedColumns.length === 0}
+            >
+              + Add card
+            </button>
+          </>
         )}
       </div>
 
