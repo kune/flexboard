@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-12
+
+### Added
+- Gravatar profile pictures throughout the app: nav bar avatar, board card assignees, comment avatars, and activity log entries — all use the new `UserAvatar` component with Gravatar fetch and deterministic coloured-initials fallback
+- Gravatar link in profile dropdown: shows "Set up profile picture" when no Gravatar is found, "Change profile picture" when one exists
+- Activity log enriched: each entry now shows the actor's avatar and name; column moves show real column names ("moved from Backlog to In Progress"); title renames show before/after values; attribute changes show field name, old value, and new value (dates formatted, user references resolved to names)
+- Real-time dashboard update: the dashboard now refreshes automatically when another user adds, removes, or changes the current user's board membership — via a new user-level SSE stream (`GET /api/v1/events`)
+- Board edit mode: toolbar overflow menu (⋯) replaces individual buttons for better mobile compatibility — view mode ⋯ contains "Edit board" (owner only); edit mode ⋯ contains "Members" and "Delete board"
+- Inline column rename in board edit mode: the column title becomes an editable input; Enter or blur saves, Escape reverts
+- Activity section in card detail is now collapsible (▲/▼ toggle), collapsed by default
+- Version display: version string now derived from `git describe --tags --dirty`; shows a `-dirty` suffix when the working tree has uncommitted changes
+
+### Fixed
+- Activity log: fields sent unchanged by the client (title, description, attributes) are no longer recorded as changed — only fields whose value actually differs from the stored value create an activity entry
+- Board toolbar: "Add Card" button hidden in edit mode to avoid confusion
+- Board toolbar: "Add Column" button width matches the column width on mobile
+- Card detail sidebar: accordion carets (▲/▼) for Attributes and Activity now visible on desktop
+- New card creation: clicking Save now navigates back to the board view instead of staying on the card
+- New card creation: the navigation blocker no longer triggers a "Discard changes?" dialog after a successful save
+
 ## [0.3.1] - 2026-04-12
 
 ### Added

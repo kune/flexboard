@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-12 (v0.3.1: version display in nav bar, board-deletion cache fix)  
+> **Last updated:** 2026-04-12 (v0.4.0: Gravatar everywhere, enriched activity log, board overflow menus, inline column rename, user-level SSE, new-card save fixes)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
