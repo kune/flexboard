@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate, useBlocker, Link } from 'react-router-dom'
+import { useParams, useNavigate, useBlocker, useLocation, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import ReactMarkdown from 'react-markdown'
 import { remarkPlugins, rehypePlugins } from '@/lib/markdown'
@@ -293,6 +293,8 @@ function ActivitySection({ boardId, cardId }: { boardId: string; cardId: string 
 export default function CardDetail() {
   const { id: boardId, cardId } = useParams<{ id: string; cardId: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const startInEdit = !!(location.state as { startEdit?: boolean } | null)?.startEdit
   const qc = useQueryClient()
   const setBoardCrumb = useUiStore((s) => s.setBoardCrumb)
   const setCardTitle = useUiStore((s) => s.setCardTitle)
@@ -369,8 +371,9 @@ export default function CardDetail() {
       setEditDescription(card.description ?? '')
       setEditAttrs({ ...(card.attributes ?? {}) })
       setEditColumnId(card.columnId)
+      if (startInEdit) setEditing(true)
     }
-  }, [card])
+  }, [card]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveMutation = useMutation({
     mutationFn: () =>

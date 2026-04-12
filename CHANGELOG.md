@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Board title displayed in board toolbar: board name shown on the left side of the toolbar in view mode (same position becomes an editable input in edit mode)
+- Board description in board header: Markdown description rendered below the board toolbar for all members; board owners see a pencil (✎) icon to edit inline, or an "Add a description…" placeholder when empty; saves via `PATCH /api/v1/boards/:id` (field already existed on the backend model)
+- Board description preview in dashboard tiles: description shown as plain-text excerpt (markdown stripped) with 2-line clamp
+- Board name editing in edit mode: editable input in the toolbar replaces the board name when edit mode is active; auto-saves on blur via `PATCH /api/v1/boards/:id`; reverts to previous name if left empty
+- Add card moved to board toolbar: "+ Add card" button in toolbar opens a modal (column selector defaulting to first column, type selector, title input); on creation the card opens directly in edit mode; per-column inline form removed
 - Column selector in card edit view: Column is now the first row in the Attributes sidebar section (view and edit); a `<select>` dropdown in edit mode moves the card to the chosen column without drag-and-drop (useful on touch interfaces); includes dirty-ring, ✎ indicator, and navigation-guard support consistent with all other attributes
 - Board edit mode: board toolbar shows an "Edit board" button for owners only; board defaults to view mode where cards remain fully interactive but board structure is locked; activating edit mode reveals column ← → reorder buttons, column delete with confirmation (cascades to cards), add column, Members management, and Delete board with confirmation
 

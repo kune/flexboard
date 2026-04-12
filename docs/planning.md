@@ -92,7 +92,7 @@
 | ✅ | Implement typed API client | `lib/api.ts` — typed fetch wrapper; Bearer token injected from `getAccessToken()` |
 | ✅ | Implement SSE hook (`useBoardSSE`) | `hooks/useBoardSSE.ts` — opens EventSource, invalidates queries on events, exponential-backoff reconnect (3 retries) |
 | ✅ | Dashboard page | `pages/Dashboard.tsx` — board grid; "New Board" modal; accent colours per board |
-| ✅ | Board page (Kanban view) | `pages/Board.tsx` — columns + cards; add-card inline form; add-column modal; card shows number (last 5 hex of ObjectId), labels, priority dot, assignee avatar initials |
+| ✅ | Board page (Kanban view) | `pages/Board.tsx` — board title in toolbar; columns + cards; add-card modal in toolbar (column + type + title, opens card in edit mode); add-column modal (edit mode only); card shows number (last 5 hex of ObjectId), labels, priority dot, assignee avatar initials |
 | ✅ | Drag-and-drop (dnd-kit) | `@dnd-kit/core` + `@dnd-kit/sortable`; card reorder within column and move between columns; optimistic local state |
 | ✅ | Card detail view | `pages/CardDetail.tsx` — two-panel layout; Markdown rendering; inline edit with dynamic attribute fields; comments; activity log in sidebar; Save/Cancel/Delete in one action row; cancel resets all edit state |
 | ✅ | Card form (create / edit) | Edit form includes all schema-driven attribute fields (`AttributeInput`); inline create in Board for quick add (type + title) |
@@ -120,14 +120,14 @@
 | ✅ | Board settings panel | `BoardMembers.tsx` modal: list members with enriched profiles, invite by email + role, change role dropdown, remove button |
 | ⬜ | User management (Dex config) | Document admin workflow for adding/removing users in `config/dex.yaml` |
 | ✅ | Column selector in card edit view | Column is the first row in the Attributes sidebar section; `<select>` dropdown in edit mode saves `columnId` via existing PATCH endpoint; dirty-ring, ✎ indicator, and navigation-guard consistent with other attributes (touch-friendly alternative to drag-and-drop) |
-| ✅ | Board edit mode | Owner-only toggle in board toolbar; board starts in view mode (cards remain fully interactive); edit mode unlocks: column ← → reorder buttons, column delete (cascade-deletes cards, confirmation required), add column modal, Members modal, Delete board (confirmation required); non-owners and editors never see the edit toggle |
+| ✅ | Board edit mode | Owner-only toggle in board toolbar; board starts in view mode (cards remain fully interactive); edit mode unlocks: board name inline editing (auto-saves on blur), column ← → reorder buttons, column delete (cascade-deletes cards, confirmation required), add column modal, Members modal, Delete board (confirmation required); non-owners and editors never see the edit toggle |
 | ⬜ | Card linking | Link cards to each other; display in sidebar |
 | ⬜ | Acceptance criteria checklist rendering | Interactive checkboxes in card detail |
 | ⬜ | Full-text search with highlighted matches | `$text` index or Atlas Search |
 | ⬜ | Activity log display in card detail | Chronological event list |
 | ✅ | Real-time: live card moves reflected without reload | Via SSE + TanStack Query invalidation |
 | ✅ | Real-time: live comments | New comments appear without reload |
-| ⬜ | Board description (Markdown) | Rendered in board header or info panel |
+| ✅ | Board description (Markdown) | Rendered below board toolbar for all members; owners can edit inline (pencil icon or "Add a description…" placeholder); saves via PATCH `/api/v1/boards/:id`; full `.prose` Markdown rendering |
 | ⬜ | Additional themes | At least one additional theme beyond light/dark |
 | ⬜ | Error states & loading skeletons | All data-fetching surfaces |
 | ⬜ | Empty states | New board, empty column, no search results |

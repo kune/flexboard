@@ -14,6 +14,21 @@ function accentFor(id: string) {
   return ACCENT_COLORS[h % ACCENT_COLORS.length]
 }
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/#{1,6}\s+/g, '')
+    .replace(/\*\*(.+?)\*\*/gs, '$1')
+    .replace(/\*(.+?)\*/gs, '$1')
+    .replace(/~~(.+?)~~/gs, '$1')
+    .replace(/`{3}[\s\S]*?`{3}/g, '')
+    .replace(/`(.+?)`/g, '$1')
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[(.+?)\]\(.*?\)/g, '$1')
+    .replace(/^\s*[-*+>]\s+/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim()
+}
+
 function NewBoardModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -94,7 +109,7 @@ function BoardGrid({ boards, showNew, onNew }: { boards: Board[]; showNew?: bool
           <div className="board-tile-body">
             <div className="board-tile-title">{board.name}</div>
             {board.description && (
-              <div className="board-tile-meta">{board.description}</div>
+              <div className="board-tile-meta">{stripMarkdown(board.description)}</div>
             )}
           </div>
         </Link>

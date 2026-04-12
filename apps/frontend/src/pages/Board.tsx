@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import ReactMarkdown from 'react-markdown'
 import {
   DndContext,
   DragOverlay,
@@ -29,11 +30,13 @@ import {
   createColumn,
   createCard,
   updateCard,
+  updateBoard,
   updateColumn,
   deleteColumn,
   deleteBoard,
 } from '@/lib/api'
 import { getUser } from '@/lib/auth'
+import { remarkPlugins, rehypePlugins } from '@/lib/markdown'
 import { useUiStore } from '@/store/uiStore'
 import { useBoardSSE } from '@/hooks/useBoardSSE'
 import BoardMembers from '@/components/BoardMembers'
@@ -151,66 +154,93 @@ function CardOverlay({ card }: { card: Card }) {
   )
 }
 
-// ── Add Card Form ─────────────────────────────────────────
+// ── Add Card Modal ────────────────────────────────────────
 
-interface AddCardFormProps {
+interface AddCardModalProps {
   boardId: string
-  columnId: string
-  onDone: () => void
+  columns: Column[]
+  onClose: () => void
+  onCreated: (card: Card) => void
 }
 
-function AddCardForm({ boardId, columnId, onDone }: AddCardFormProps) {
-  const [title, setTitle] = useState('')
+function AddCardModal({ boardId, columns, onClose, onCreated }: AddCardModalProps) {
+  const [columnId, setColumnId] = useState(columns[0]?.id ?? '')
   const [type, setType] = useState('task')
+  const [title, setTitle] = useState('')
   const qc = useQueryClient()
 
   const mutation = useMutation({
     mutationFn: () => createCard(boardId, { columnId, type, title: title.trim() }),
-    onSuccess: () => {
+    onSuccess: (card) => {
       qc.invalidateQueries({ queryKey: ['cards', boardId] })
-      onDone()
+      onCreated(card)
     },
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim()) return
+    if (!title.trim() || !columnId) return
     mutation.mutate()
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{ margin: '0 10px 10px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: 10 }}
-    >
-      <select
-        className="form-select"
-        value={type}
-        onChange={(e) => setType(e.target.value)}
-        style={{ marginBottom: 8, fontSize: 12, padding: '4px 8px' }}
-      >
-        <option value="task">Task</option>
-        <option value="bug">Bug</option>
-        <option value="story">Story</option>
-        <option value="epic">Epic</option>
-      </select>
-      <input
-        className="form-input"
-        autoFocus
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Card title…"
-        style={{ marginBottom: 8, fontSize: 13 }}
-      />
-      <div style={{ display: 'flex', gap: 6 }}>
-        <button type="submit" className="btn btn-primary btn-sm" disabled={!title.trim() || mutation.isPending}>
-          Add
-        </button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onDone}>
-          Cancel
-        </button>
+    <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="modal">
+        <div className="modal-header">
+          <span className="modal-title">Add Card</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            <div className="form-group">
+              <label className="form-label">Column <span className="form-label-req">*</span></label>
+              <select
+                className="form-select"
+                value={columnId}
+                onChange={(e) => setColumnId(e.target.value)}
+              >
+                {columns.map((col) => (
+                  <option key={col.id} value={col.id}>{col.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Type <span className="form-label-req">*</span></label>
+              <select
+                className="form-select"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+              >
+                <option value="task">Task</option>
+                <option value="bug">Bug</option>
+                <option value="story">Story</option>
+                <option value="epic">Epic</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Title <span className="form-label-req">*</span></label>
+              <input
+                className="form-input"
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Card title…"
+              />
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>Cancel</button>
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm"
+              disabled={!title.trim() || !columnId || mutation.isPending}
+            >
+              {mutation.isPending ? 'Adding…' : 'Add card'}
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
   )
 }
 
@@ -230,7 +260,6 @@ interface KColumnProps {
 }
 
 function KColumn({ col, cards, boardId, nameMap, editMode, isFirst, isLast, onMoveLeft, onMoveRight, onDelete }: KColumnProps) {
-  const [addingCard, setAddingCard] = useState(false)
   const cardIds = cards.map((c) => c.id)
 
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: col.id })
@@ -273,13 +302,6 @@ function KColumn({ col, cards, boardId, nameMap, editMode, isFirst, isLast, onMo
         </div>
       </SortableContext>
 
-      {addingCard ? (
-        <AddCardForm boardId={boardId} columnId={col.id} onDone={() => setAddingCard(false)} />
-      ) : (
-        <button className="kanban-add-btn" onClick={() => setAddingCard(true)}>
-          + Add card
-        </button>
-      )}
     </div>
   )
 }
@@ -342,11 +364,15 @@ export default function Board() {
   const { id: boardId } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [editMode, setEditMode] = useState(false)
+  const [showAddCard, setShowAddCard] = useState(false)
   const [showAddCol, setShowAddCol] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
   const [confirm, setConfirm] = useState<{
     message: string; detail?: string; confirmLabel?: string; onConfirm: () => void
   } | null>(null)
+  const [descEditing, setDescEditing] = useState(false)
+  const [descValue, setDescValue] = useState('')
+  const [editBoardName, setEditBoardName] = useState('')
   const [currentUserSub, setCurrentUserSub] = useState<string | null>(null)
   const [activeCard, setActiveCard] = useState<Card | null>(null)
   const [localCards, setLocalCards] = useState<Card[] | null>(null)
@@ -467,6 +493,35 @@ export default function Board() {
     onSuccess: () => navigate('/'),
   })
 
+  const updateBoardDescMutation = useMutation({
+    mutationFn: (description: string) => updateBoard(boardId!, { description }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['board', boardId] })
+      setDescEditing(false)
+    },
+  })
+
+  const updateBoardNameMutation = useMutation({
+    mutationFn: (name: string) => updateBoard(boardId!, { name }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['board', boardId] }),
+  })
+
+  const handleEnterEditMode = () => {
+    setEditBoardName(board?.name ?? '')
+    setEditMode(true)
+  }
+
+  const handleBoardNameBlur = () => {
+    const trimmed = editBoardName.trim()
+    if (!trimmed) {
+      setEditBoardName(board?.name ?? '')
+      return
+    }
+    if (trimmed !== board?.name) {
+      updateBoardNameMutation.mutate(trimmed)
+    }
+  }
+
   // Touch: delay+tolerance prevents scroll-swipe from triggering a drag.
   // Mouse: distance-only for snappy desktop feel.
   const sensors = useSensors(
@@ -571,8 +626,26 @@ export default function Board() {
   return (
     <>
       <div className="board-toolbar">
-        {editMode && <span className="board-edit-badge">Editing</span>}
+        {editMode ? (
+          <input
+            className="board-name-input"
+            value={editBoardName}
+            onChange={(e) => setEditBoardName(e.target.value)}
+            onBlur={handleBoardNameBlur}
+            placeholder="Board name…"
+            aria-label="Board name"
+          />
+        ) : (
+          <span className="board-toolbar-title">{board?.name}</span>
+        )}
         <div style={{ flex: 1 }} />
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={() => setShowAddCard(true)}
+          disabled={sortedColumns.length === 0}
+        >
+          + Add card
+        </button>
         {editMode ? (
           <>
             <button className="btn btn-secondary btn-sm" onClick={() => setShowMembers(true)}>
@@ -581,16 +654,69 @@ export default function Board() {
             <button className="btn btn-danger btn-sm" onClick={handleDeleteBoard}>
               Delete board
             </button>
-            <button className="btn btn-primary btn-sm" onClick={() => setEditMode(false)}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setEditMode(false)}>
               Done
             </button>
           </>
         ) : isOwner && (
-          <button className="btn btn-secondary btn-sm" onClick={() => setEditMode(true)}>
+          <button className="btn btn-secondary btn-sm" onClick={handleEnterEditMode}>
             Edit board
           </button>
         )}
       </div>
+
+      {(board?.description || isOwner) && (
+        <div className="board-desc">
+          {descEditing ? (
+            <>
+              <textarea
+                className="board-desc-textarea"
+                autoFocus
+                value={descValue}
+                onChange={(e) => setDescValue(e.target.value)}
+                placeholder="Board description (Markdown supported)…"
+                rows={4}
+              />
+              <div className="board-desc-actions">
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => updateBoardDescMutation.mutate(descValue)}
+                  disabled={updateBoardDescMutation.isPending}
+                >
+                  {updateBoardDescMutation.isPending ? 'Saving…' : 'Save'}
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={() => setDescEditing(false)}>
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : board?.description ? (
+            <>
+              <div className="prose board-desc-content">
+                <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
+                  {board.description}
+                </ReactMarkdown>
+              </div>
+              {isOwner && (
+                <button
+                  className="board-desc-edit-btn"
+                  title="Edit description"
+                  onClick={() => { setDescValue(board.description ?? ''); setDescEditing(true) }}
+                >
+                  ✎
+                </button>
+              )}
+            </>
+          ) : (
+            <button
+              className="board-desc-placeholder"
+              onClick={() => { setDescValue(''); setDescEditing(true) }}
+            >
+              Add a description…
+            </button>
+          )}
+        </div>
+      )}
 
       <DndContext
         sensors={sensors}
@@ -648,6 +774,14 @@ export default function Board() {
         </div>
       )}
 
+      {showAddCard && (
+        <AddCardModal
+          boardId={boardId!}
+          columns={sortedColumns}
+          onClose={() => setShowAddCard(false)}
+          onCreated={(card) => navigate(`/boards/${boardId}/cards/${card.id}`, { state: { startEdit: true } })}
+        />
+      )}
       {showAddCol && <AddColumnModal boardId={boardId!} onClose={() => setShowAddCol(false)} />}
       {showMembers && currentUserSub && (
         <BoardMembers
