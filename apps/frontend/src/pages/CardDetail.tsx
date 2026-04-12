@@ -418,6 +418,7 @@ export default function CardDetail() {
   const setCardTitle = useUiStore((s) => s.setCardTitle)
 
   const [editing, setEditing] = useState(false)
+  const bypassBlocker = useRef(false)
   const [attrOpen, setAttrOpen] = useState(true)
   const [descFullscreen, setDescFullscreen] = useState(false)
   const [editTitle, setEditTitle] = useState('')
@@ -508,6 +509,7 @@ export default function CardDetail() {
       qc.invalidateQueries({ queryKey: ['cards', boardId] })
       qc.invalidateQueries({ queryKey: ['activity', boardId, cardId] })
       if (startInEdit) {
+        bypassBlocker.current = true
         navigate(`/boards/${boardId}`)
       } else {
         setEditing(false)
@@ -572,7 +574,7 @@ export default function CardDetail() {
   )) || commentDraft.trim() !== '' || commentEditDirty
 
   // Block in-app navigation (React Router links, browser back/forward within SPA)
-  const blocker = useBlocker(isDirty)
+  const blocker = useBlocker(() => !bypassBlocker.current && isDirty)
 
   // Block browser-native navigation (address bar, close tab, hard reload)
   useEffect(() => {
