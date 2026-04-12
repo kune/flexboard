@@ -122,9 +122,9 @@
 | ✅ | Column selector in card edit view | Column is the first row in the Attributes sidebar section; `<select>` dropdown in edit mode saves `columnId` via existing PATCH endpoint; dirty-ring, ✎ indicator, and navigation-guard consistent with other attributes (touch-friendly alternative to drag-and-drop) |
 | ✅ | Board edit mode | Owner-only toggle in board toolbar; board starts in view mode (cards remain fully interactive); edit mode unlocks: board name inline editing (auto-saves on blur), column ← → reorder buttons, column delete (cascade-deletes cards, confirmation required), add column modal, Members modal, Delete board (confirmation required); non-owners and editors never see the edit toggle |
 | ⬜ | Card linking | Link cards to each other; display in sidebar |
-| ⬜ | Acceptance criteria checklist rendering | Interactive checkboxes in card detail |
+| ✅ | Acceptance criteria checklist rendering | `- [ ]`/`- [x]` task list items rendered as interactive checkboxes in view mode; clicking toggles state and saves immediately via PATCH; applies to card description and all `markdown` attribute fields |
 | ⬜ | Full-text search with highlighted matches | `$text` index or Atlas Search |
-| ⬜ | Activity log display in card detail | Chronological event list |
+| ✅ | Activity log display in card detail | `ActivitySection` component at the bottom of the sidebar; fetches via `GET /api/v1/.../activity`; renders event label + relative timestamp; hidden when empty |
 | ✅ | Real-time: live card moves reflected without reload | Via SSE + TanStack Query invalidation |
 | ✅ | Real-time: live comments | New comments appear without reload |
 | ✅ | Board description (Markdown) | Rendered below board toolbar for all members; owners can edit inline (pencil icon or "Add a description…" placeholder); saves via PATCH `/api/v1/boards/:id`; full `.prose` Markdown rendering |

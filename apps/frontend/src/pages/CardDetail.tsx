@@ -54,6 +54,27 @@ function isFieldDirty(a: unknown, b: unknown): boolean {
   return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null)
 }
 
+// ── Checklist helpers ─────────────────────────────────────
+
+function toggleCheckbox(markdown: string, index: number): string {
+  let count = 0
+  return markdown.replace(/^(\s*[-*+] )\[([x ])\]/gim, (_match, prefix, state) => {
+    if (count++ === index) return `${prefix}[${state === ' ' ? 'x' : ' '}]`
+    return _match
+  })
+}
+
+function makeCheckboxComponents(onToggle: (i: number) => void) {
+  let idx = 0
+  return {
+    input({ type, checked }: { type?: string; checked?: boolean; [key: string]: unknown }) {
+      if (type !== 'checkbox') return null
+      const i = idx++
+      return <input type="checkbox" checked={!!checked} onChange={() => onToggle(i)} />
+    },
+  }
+}
+
 // ── Comments section ──────────────────────────────────────
 
 interface CommentsSectionProps {
@@ -399,6 +420,27 @@ export default function CardDetail() {
     },
   })
 
+  const checkboxMutation = useMutation({
+    mutationFn: (data: { description?: string; attributes?: Record<string, unknown> }) =>
+      updateCard(boardId!, cardId!, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['card', boardId, cardId] })
+      qc.invalidateQueries({ queryKey: ['cards', boardId] })
+      qc.invalidateQueries({ queryKey: ['activity', boardId, cardId] })
+    },
+  })
+
+  const handleDescCheckbox = (idx: number) => {
+    if (!card?.description || editing) return
+    checkboxMutation.mutate({ description: toggleCheckbox(card.description, idx) })
+  }
+
+  const handleAttrCheckbox = (fieldKey: string) => (idx: number) => {
+    if (editing) return
+    const current = String(card?.attributes?.[fieldKey] ?? '')
+    checkboxMutation.mutate({ attributes: { ...(card?.attributes ?? {}), [fieldKey]: toggleCheckbox(current, idx) } })
+  }
+
   useBoardSSE(boardId)
 
   const columnName = columns?.find((c) => c.id === card?.columnId)?.name ?? '—'
@@ -599,7 +641,11 @@ export default function CardDetail() {
               <div className="detail-section">
                 <div className="detail-section-label">Description</div>
                 <div className="prose">
-                  <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
+                  <ReactMarkdown
+                    remarkPlugins={remarkPlugins}
+                    rehypePlugins={rehypePlugins}
+                    components={makeCheckboxComponents(handleDescCheckbox)}
+                  >
                     {card.description}
                   </ReactMarkdown>
                 </div>
@@ -621,7 +667,11 @@ export default function CardDetail() {
                     {f.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
                   </div>
                   <div className="prose">
-                    <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={rehypePlugins}>
+                    <ReactMarkdown
+                      remarkPlugins={remarkPlugins}
+                      rehypePlugins={rehypePlugins}
+                      components={makeCheckboxComponents(handleAttrCheckbox(f.key))}
+                    >
                       {String(val)}
                     </ReactMarkdown>
                   </div>

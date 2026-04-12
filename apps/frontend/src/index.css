@@ -609,7 +609,14 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 .prose ul { padding-left: 20px; margin-bottom: 10px; }
 .prose ol { padding-left: 20px; margin-bottom: 10px; list-style-type: decimal; }
 .prose li { margin-bottom: 4px; }
-.prose li input[type="checkbox"] { margin-right: 5px; }
+.prose li input[type="checkbox"] {
+  margin-right: 5px;
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  accent-color: #2563eb;
+  flex-shrink: 0;
+}
 .prose blockquote {
   border-left: 3px solid #e2e8f0;
   padding: 2px 0 2px 14px;
