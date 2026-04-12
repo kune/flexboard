@@ -247,18 +247,44 @@ interface KColumnProps {
   onMoveLeft?: () => void
   onMoveRight?: () => void
   onDelete?: () => void
+  onRename?: (name: string) => void
 }
 
-function KColumn({ col, cards, boardId, nameMap, emailMap, editMode, isFirst, isLast, onMoveLeft, onMoveRight, onDelete }: KColumnProps) {
+function KColumn({ col, cards, boardId, nameMap, emailMap, editMode, isFirst, isLast, onMoveLeft, onMoveRight, onDelete, onRename }: KColumnProps) {
   const cardIds = cards.map((c) => c.id)
+  const [inputValue, setInputValue] = useState(col.name)
+
+  useEffect(() => { setInputValue(col.name) }, [col.name])
 
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: col.id })
+
+  const commitRename = (value: string) => {
+    const trimmed = value.trim()
+    if (trimmed && trimmed !== col.name) {
+      onRename?.(trimmed)
+    } else {
+      setInputValue(col.name)
+    }
+  }
 
   return (
     <div className={`kanban-col${isOver ? ' drag-over' : ''}`}>
       <div className="kanban-col-header">
         <div className="kanban-col-title">
-          {col.name}
+          {editMode ? (
+            <input
+              className="col-name-input"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onBlur={(e) => commitRename(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur()
+                else if (e.key === 'Escape') { setInputValue(col.name); e.currentTarget.blur() }
+              }}
+            />
+          ) : (
+            col.name
+          )}
           <span className="col-count">{cards.length}</span>
         </div>
         {editMode && (
@@ -470,6 +496,12 @@ export default function Board() {
       updateColumn(boardId!, colId, { position: posB }),
       updateColumn(boardId!, swapColId, { position: posA }),
     ]),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['columns', boardId] }),
+  })
+
+  const renameColumnMutation = useMutation({
+    mutationFn: ({ colId, name }: { colId: string; name: string }) =>
+      updateColumn(boardId!, colId, { name }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['columns', boardId] }),
   })
 
@@ -793,6 +825,7 @@ export default function Board() {
                 if (next) moveColumnMutation.mutate({ colId: col.id, swapColId: next.id, posA: col.position, posB: next.position })
               }}
               onDelete={() => handleDeleteColumn(col)}
+              onRename={(name) => renameColumnMutation.mutate({ colId: col.id, name })}
             />
           ))}
 
