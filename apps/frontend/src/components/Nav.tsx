@@ -125,7 +125,7 @@ export default function Nav({ user }: NavProps) {
                 <div className="nav-dropdown-name">{displayName}</div>
                 <div className="nav-dropdown-email">{displayEmail}</div>
               </div>
-              {gravatarMissing && (
+              {user.profile.email && (
                 <a
                   className="nav-dropdown-item"
                   href="https://gravatar.com"
@@ -133,7 +133,7 @@ export default function Nav({ user }: NavProps) {
                   rel="noreferrer"
                   onClick={() => setDropdownOpen(false)}
                 >
-                  Set up profile picture
+                  {gravatarMissing ? 'Set up profile picture' : 'Change profile picture'} ↗
                 </a>
               )}
               <button
