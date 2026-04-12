@@ -1,9 +1,9 @@
 # Flexboard – Requirements Document
 
 > **Name:** Flexboard  
-> **Version:** 0.7  
-> **Date:** 2026-04-10  
-> **Status:** Updated — FR-10 fullscreen description editor added
+> **Version:** 0.8  
+> **Date:** 2026-04-12  
+> **Status:** Updated — AR-06 multi-URL deployment requirement added
 
 ---
 
@@ -283,6 +283,15 @@ Cards are stored as JSON documents with a fixed "envelope" and a flexible `attri
 - Alternatively or additionally: individual **Docker images** per service, consumable from a registry.
 - Goal: `docker compose up` should start the entire application locally or on a server with no additional dependencies to install.
 
+#### Multi-URL access *(future requirement)*
+
+The application must be reachable under **two different URLs** pointing to the same deployment (e.g. an internal LAN address and an external internet domain). The following components must support this:
+
+- **Dex** – both URLs are registered as permitted `redirectURIs` in the OIDC client configuration.
+- **Frontend** – the `redirect_uri` passed to Dex during login is derived dynamically from `window.location.origin` rather than a static environment variable, so that whichever URL the user accesses is used for the callback.
+- **Backend** – both origins are explicitly listed in the CORS configuration.
+- **Dex (CORS)** – if Dex handles token exchange in the browser, both origins must be allowed there as well.
+
 ### AR-07 – Extensibility
 
 - Card type schemas are defined in a **YAML/JSON configuration file** (versioned in the repository) and seeded into a dedicated MongoDB collection on startup. The backend reads schemas from the database at runtime, making them extensible without redeployment.
@@ -349,7 +358,7 @@ Cards are stored as JSON documents with a fixed "envelope" and a flexible `attri
 - All API endpoints (except login/register) require authentication.
 - Inputs are validated and sanitized server-side.
 - Markdown rendering in the frontend uses a safe renderer with the equivalent of `dangerouslySetInnerHTML` disabled (no raw HTML from user input).
-- CORS is configured restrictively (only permitted origins).
+- CORS is configured restrictively (only permitted origins). When multi-URL access is enabled (AR-06), all configured access URLs must be listed as permitted origins.
 - Dependencies are regularly audited for known vulnerabilities (`npm audit` / `pnpm audit`).
 
 ### TR-08 – Theming
