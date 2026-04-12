@@ -11,16 +11,18 @@ const { writeFileSync } = require('fs')
 const { join } = require('path')
 
 function computeVersion(raw) {
-  const m = raw.match(/^v(\d+)\.(\d+)\.(\d+)-(\d+)-g([0-9a-f]+)$/)
+  const m = raw.match(/^v(\d+)\.(\d+)\.(\d+)-(\d+)-g([0-9a-f]+)(-dirty)?$/)
   if (!m) return raw.replace(/^v/, '')
-  const [, major, minor, patch, distance, hash] = m
-  if (distance === '0') return `${major}.${minor}.${patch}`
-  return `${major}.${minor}.${Number(patch) + 1}-dev+${hash.slice(0, 7)}`
+  const [, major, minor, patch, distance, hash, dirty] = m
+  const base = distance === '0'
+    ? `${major}.${minor}.${patch}`
+    : `${major}.${minor}.${Number(patch) + 1}-dev+${hash.slice(0, 7)}`
+  return dirty ? `${base}-dirty` : base
 }
 
 function getVersion() {
   try {
-    const raw = execSync('git describe --tags --long --match "v*"', {
+    const raw = execSync('git describe --tags --long --dirty --match "v*"', {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
     }).trim()
