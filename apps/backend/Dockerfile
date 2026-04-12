@@ -1,6 +1,11 @@
 # ── Stage 1: Build ───────────────────────────────────────
 FROM --platform=$BUILDPLATFORM node:22-alpine AS builder
 
+# Passed from the CI runner so git describe never runs inside the container
+# (build steps can dirty the working tree, producing a false -dirty suffix).
+ARG APP_VERSION_RAW
+ENV APP_VERSION_RAW=$APP_VERSION_RAW
+
 RUN npm install -g pnpm && apk add --no-cache git
 
 WORKDIR /app

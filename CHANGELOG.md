@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Docker images: version no longer shows `-dirty` suffix on clean releases — the CI runner now pre-computes the version via `git describe` and passes it as `APP_VERSION_RAW` build-arg, so the build running inside the container never calls `git describe` after steps that could modify the working tree
+
 ## [0.4.0] - 2026-04-12
 
 ### Added

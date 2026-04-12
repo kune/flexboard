@@ -15,6 +15,11 @@ function computeVersion(raw: string): string {
 }
 
 function getVersion(): string {
+  // In Docker builds the CI runner computes the version and passes it as
+  // APP_VERSION_RAW so we never run git describe inside the container
+  // (build steps that run beforehand can dirty the working tree).
+  const envRaw = process.env.APP_VERSION_RAW?.trim()
+  if (envRaw) return computeVersion(envRaw)
   try {
     const raw = execSync('git describe --tags --long --dirty --match "v*"', {
       encoding: 'utf-8',
