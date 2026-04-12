@@ -507,7 +507,11 @@ export default function CardDetail() {
       qc.invalidateQueries({ queryKey: ['card', boardId, cardId] })
       qc.invalidateQueries({ queryKey: ['cards', boardId] })
       qc.invalidateQueries({ queryKey: ['activity', boardId, cardId] })
-      setEditing(false)
+      if (startInEdit) {
+        navigate(`/boards/${boardId}`)
+      } else {
+        setEditing(false)
+      }
     },
   })
 
