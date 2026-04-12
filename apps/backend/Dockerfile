@@ -1,7 +1,7 @@
 # ── Stage 1: Build ───────────────────────────────────────
 FROM node:22-alpine AS builder
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm && apk add --no-cache git
 
 WORKDIR /app
 
@@ -14,14 +14,19 @@ COPY packages/shared/package.json ./packages/shared/
 
 RUN pnpm install --frozen-lockfile
 
-# Copy source
+# Copy source + git history so we can compute the version
 COPY apps/backend ./apps/backend
 COPY packages/shared ./packages/shared
 COPY tsconfig.base.json ./
+COPY .git .git
+COPY scripts/write-version.cjs ./scripts/write-version.cjs
 
 # Build shared package first, then backend
 RUN pnpm --filter @flexboard/shared build
 RUN pnpm --filter @flexboard/backend build
+
+# Write the computed version to dist/VERSION (copied to the runtime container below)
+RUN node scripts/write-version.cjs
 
 # ── Stage 2: Runtime ─────────────────────────────────────
 FROM node:22-alpine

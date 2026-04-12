@@ -1,4 +1,8 @@
 import { createRequire } from 'module'
+import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, resolve } from 'path'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
@@ -13,8 +17,35 @@ import { activityRoutes } from '@/routes/activity.js'
 import { memberRoutes } from '@/routes/members.js'
 import { sseRoutes } from '@/routes/sse.js'
 
-const _require = createRequire(import.meta.url)
-const { version: backendVersion } = _require('../package.json') as { version: string }
+function computeVersion(raw: string): string {
+  const m = raw.match(/^v(\d+)\.(\d+)\.(\d+)-(\d+)-g([0-9a-f]+)$/)
+  if (!m) return raw.replace(/^v/, '')
+  const [, major, minor, patch, distance, hash] = m
+  if (distance === '0') return `${major}.${minor}.${patch}`
+  return `${major}.${minor}.${parseInt(patch) + 1}-dev+${hash.slice(0, 7)}`
+}
+
+function getVersion(): string {
+  // 1. VERSION file written by the Docker builder stage (production container has no git)
+  try {
+    const __dir = dirname(fileURLToPath(import.meta.url))
+    const v = readFileSync(resolve(__dir, 'VERSION'), 'utf-8').trim()
+    if (v) return v
+  } catch {}
+  // 2. git describe — works in local development (tsx watch)
+  try {
+    const raw = execSync('git describe --tags --long --match "v*"', {
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    }).trim()
+    return computeVersion(raw)
+  } catch {}
+  // 3. Fallback to package.json
+  const _require = createRequire(import.meta.url)
+  return (_require('../package.json') as { version: string }).version
+}
+
+const backendVersion = getVersion()
 
 const app = Fastify({
   logger: {
