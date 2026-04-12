@@ -1,10 +1,17 @@
+import { createRequire } from 'module'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
+const _require = createRequire(import.meta.url)
+const { version } = _require('./package.json') as { version: string }
+
 export default defineConfig({
   // Load .env from the monorepo root so VITE_* vars are shared
   envDir: resolve(__dirname, '../../'),
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+  },
   plugins: [react()],
   resolve: {
     alias: {

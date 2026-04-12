@@ -124,6 +124,17 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   position: relative;
 }
 .nav-avatar-wrap { position: relative; }
+.nav-version {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+  display: none;
+}
+.nav-version.nav-version-mismatch { color: #f59e0b; }
+.nav-version-warn { margin-left: 3px; }
+@media (min-width: 640px) {
+  .nav-version { display: block; }
+}
 .nav-dropdown {
   position: absolute;
   top: calc(100% + 8px);

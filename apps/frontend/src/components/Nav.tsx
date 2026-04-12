@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { type User } from 'oidc-client-ts'
 import { signOut } from '@/lib/auth'
+import { getVersion } from '@/lib/api'
 import { useUiStore } from '@/store/uiStore'
 
 interface NavProps {
@@ -28,6 +30,15 @@ export default function Nav({ user }: NavProps) {
 
   const displayName = user.profile.name ?? user.profile.preferred_username ?? user.profile.email ?? user.profile.sub
   const displayEmail = user.profile.email ?? user.profile.preferred_username ?? user.profile.sub
+
+  const { data: versionData } = useQuery({
+    queryKey: ['version'],
+    queryFn: getVersion,
+    staleTime: Infinity,
+  })
+  const frontendVersion = __APP_VERSION__
+  const backendVersion = versionData?.version
+  const versionMismatch = !!backendVersion && backendVersion !== frontendVersion
 
   return (
     <nav className="nav">
@@ -68,6 +79,14 @@ export default function Nav({ user }: NavProps) {
       )}
 
       <div className="nav-spacer" />
+
+      <div
+        className={`nav-version${versionMismatch ? ' nav-version-mismatch' : ''}`}
+        title={versionMismatch ? `Frontend: v${frontendVersion} · Backend: v${backendVersion}` : `v${frontendVersion}`}
+      >
+        v{frontendVersion}
+        {versionMismatch && <span className="nav-version-warn">⚠</span>}
+      </div>
 
       <div className="nav-avatar-wrap">
         <button

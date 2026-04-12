@@ -128,3 +128,10 @@ export const removeMember = (boardId: string, userId: string) =>
 
 export const searchUsers = (email: string) =>
   request<{ sub: string; email: string; name: string }[]>(`/users?email=${encodeURIComponent(email)}`)
+
+// ── Version ───────────────────────────────────────────────
+
+export const getVersion = (): Promise<{ version: string }> =>
+  fetch('/api/v1/version')
+    .then((r) => (r.ok ? (r.json() as Promise<{ version: string }>) : Promise.resolve({ version: '' })))
+    .catch(() => ({ version: '' }))

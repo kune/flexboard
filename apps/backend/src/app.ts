@@ -1,3 +1,4 @@
+import { createRequire } from 'module'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
@@ -11,6 +12,9 @@ import { commentRoutes } from '@/routes/comments.js'
 import { activityRoutes } from '@/routes/activity.js'
 import { memberRoutes } from '@/routes/members.js'
 import { sseRoutes } from '@/routes/sse.js'
+
+const _require = createRequire(import.meta.url)
+const { version: backendVersion } = _require('../package.json') as { version: string }
 
 const app = Fastify({
   logger: {
@@ -34,6 +38,9 @@ await seedCardTypes()
 
 // Health check — unauthenticated, used by Docker Compose
 app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
+
+// Version — unauthenticated
+app.get('/api/v1/version', async () => ({ version: backendVersion }))
 
 // Auth smoke-test
 app.get(
