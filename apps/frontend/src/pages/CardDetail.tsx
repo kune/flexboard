@@ -281,6 +281,7 @@ function CommentsSection({ boardId, cardId, currentSub, nameMap, emailMap, draft
 // ── Activity section ──────────────────────────────────────
 
 function ActivitySection({ boardId, cardId }: { boardId: string; cardId: string }) {
+  const [open, setOpen] = useState(false)
   const { data: entries = [] } = useQuery({
     queryKey: ['activity', boardId, cardId],
     queryFn: () => getActivity(boardId, cardId),
@@ -290,18 +291,29 @@ function ActivitySection({ boardId, cardId }: { boardId: string; cardId: string 
 
   return (
     <div className="sidebar-section">
-      <div className="sidebar-section-title">Activity</div>
-      <div className="activity-list">
-        {entries.map((e) => (
-          <div key={e.id} className="activity-item">
-            <div className="activity-dot" />
-            <div className="activity-body">
-              <div className="activity-text">{activityLabel(e.event, e.payload)}</div>
-              <div className="activity-time">{timeAgo(e.createdAt)}</div>
-            </div>
-          </div>
-        ))}
+      <div className="sidebar-section-header">
+        <button
+          className="sidebar-section-accordion"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+        >
+          <span className="sidebar-section-title">Activity</span>
+          <span className="sidebar-accordion-icon">{open ? '▲' : '▼'}</span>
+        </button>
       </div>
+      {open && (
+        <div className="activity-list">
+          {entries.map((e) => (
+            <div key={e.id} className="activity-item">
+              <div className="activity-dot" />
+              <div className="activity-body">
+                <div className="activity-text">{activityLabel(e.event, e.payload)}</div>
+                <div className="activity-time">{timeAgo(e.createdAt)}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
