@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-12 (v0.4.1: fix Docker build producing -dirty version suffix)  
+> **Last updated:** 2026-04-14 (v0.5.0: multi-URL deployment support)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
