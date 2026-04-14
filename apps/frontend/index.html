@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Flexboard</title>
+    <!-- Runtime config injected by Nginx (sets window.__FLEXBOARD_DEX_ISSUER__).
+         Falls back gracefully in local dev where this file is not served. -->
+    <script src="/config.js" onerror="void 0"></script>
     <script>
       // Apply persisted theme before React mounts to prevent flash of unstyled content (FOUC)
       try {

@@ -34,8 +34,15 @@ FROM nginx:1.27-alpine
 
 COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# Template is expanded at container startup: ${DEX_ISSUER} → actual issuer URL
+COPY docker/config.js.template /etc/nginx/config.js.template
 
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s \
   CMD wget -qO- http://127.0.0.1/health || exit 1
+
+# Generate /config.js from the template (substitutes ${DEX_ISSUER} env var),
+# then start Nginx. envsubst is included in the official nginx:alpine image.
+CMD ["/bin/sh", "-c", \
+  "envsubst '${DEX_ISSUER}' < /etc/nginx/config.js.template > /usr/share/nginx/html/config.js && exec nginx -g 'daemon off;'"]

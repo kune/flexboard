@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Multi-URL deployment support: the app can now be accessed from two different URLs (e.g. internal LAN and external internet) pointing to the same deployment
+  - Nginx injects the canonical Dex issuer URL into `/config.js` at container startup via `envsubst`; the frontend reads `window.__FLEXBOARD_DEX_ISSUER__` so that JWT `iss` validation works regardless of which URL the user accesses
+  - Backend `CORS_ORIGIN` now accepts a comma-separated list of origins
+  - `config/dex.yaml.example` documents how to add additional `redirectURIs`
+
 ## [0.4.1] - 2026-04-12
 
 ### Fixed

@@ -1,10 +1,19 @@
 import { UserManager, WebStorageStateStore, type User } from 'oidc-client-ts'
 
-// Derive the OIDC authority from the current origin so the same Docker image
-// works under any hostname/IP without rebuild. Nginx always proxies /dex/ to
-// the internal Dex container, so this is always correct.
+// Endpoint base: always derived from the current origin so the same Docker
+// image works under any hostname/IP without rebuild.
 const OIDC_AUTHORITY = `${window.location.origin}/dex`
 const CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID ?? 'flexboard-web'
+
+// Canonical Dex issuer — used only for `iss` claim validation in JWTs.
+// When the app is accessed from a second URL (e.g. an external domain) the
+// tokens still carry the primary deployment's issuer in their `iss` claim.
+// Nginx injects this value at container startup via envsubst into /config.js
+// (sets window.__FLEXBOARD_DEX_ISSUER__). Falls back to the current origin so
+// single-URL deployments and local dev work without any extra configuration.
+const CANONICAL_ISSUER: string =
+  (window as unknown as { __FLEXBOARD_DEX_ISSUER__?: string }).__FLEXBOARD_DEX_ISSUER__ ||
+  OIDC_AUTHORITY
 
 export const userManager = new UserManager({
   authority: OIDC_AUTHORITY,
@@ -17,10 +26,10 @@ export const userManager = new UserManager({
   // Pre-seed the OIDC metadata so oidc-client-ts skips the discovery fetch.
   // The discovery fetch is a JavaScript fetch() call that can fail with
   // self-signed certificates before the user interacts with the page.
-  // All URLs are derived from the runtime origin so the same image works on
-  // any host.
+  // Endpoint URLs use the runtime origin; the issuer uses the canonical value
+  // so that tokens validate correctly when accessed from a second URL.
   metadata: {
-    issuer: OIDC_AUTHORITY,
+    issuer: CANONICAL_ISSUER,
     authorization_endpoint: `${OIDC_AUTHORITY}/auth`,
     token_endpoint: `${OIDC_AUTHORITY}/token`,
     jwks_uri: `${OIDC_AUTHORITY}/keys`,
