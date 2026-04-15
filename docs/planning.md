@@ -46,7 +46,7 @@
 | ✅ | Write `frontend.Dockerfile` (multi-stage) | Build → Nginx serving SPA |
 | ✅ | Write `docker-compose.yml` | All 6 containers; internal network |
 | ✅ | Write `docker-compose.dev.yml` | Dev overrides: infrastructure only, apps run locally |
-| ✅ | Configure OIDC provider | Originally Zitadel; replaced by **Dex** with **LLDAP** as the user directory (LDAP connector). `scripts/init.sh` generates `config/dex.yaml` and a persistent `LLDAP_JWT_SECRET` in `.env`. LLDAP web UI at `:17170` for user and password management. |
+| ✅ | Configure OIDC provider | Originally Zitadel; replaced by **Dex** with **LLDAP** as the user directory (LDAP connector). `scripts/init.sh` generates `config/dex.yaml` and a persistent `LLDAP_JWT_SECRET` in `.env`. LLDAP web UI proxied by nginx at `/useradmin` (same host/port as the app). |
 | ✅ | Integrate OIDC into frontend (OIDC client, login redirect) | `lib/auth.ts` — `oidc-client-ts`, PKCE. Authority: `http://localhost/dex`. |
 | ✅ | Validate JWT in backend (`jose` + Dex JWKS) | `lib/auth.ts` — `createRemoteJWKSet`; `requireAuth` preHandler on all routes. `DEX_ISSUER` / `DEX_JWKS_URL` env vars. |
 | ✅ | Verify full auth round-trip via `docker compose up` | Login → Dex → `/auth/callback` → token → `/api/v1/me` ✓ |
@@ -119,7 +119,7 @@
 | ✅ | Board membership — manage API | `PATCH /api/v1/boards/:id/members/:userId` (role change); `DELETE` (remove); last-owner guard on both |
 | ✅ | Dashboard — "My Boards" / "Shared With Me" split | `Dashboard.tsx` splits boards by whether current user's role is `owner` vs `editor`/`viewer` |
 | ✅ | Board settings panel | `BoardMembers.tsx` modal: list members with enriched profiles, invite by email + role, change role dropdown, remove button |
-| ✅ | User management (LLDAP) | LLDAP (`lldap/lldap:stable`) added as 6th container; Dex uses its LDAP connector. Admin accesses LLDAP web UI at `:17170` to create/remove users and reset passwords. Users can change their own password via the same UI. `LLDAP_ADMIN_PASS` env var (default `Test1234!`) controls initial admin credentials. |
+| ✅ | User management (LLDAP) | LLDAP (`lldap/lldap:stable`) added as 6th container; Dex uses its LDAP connector. Admin and users access LLDAP web UI at `/useradmin` (same host/port as the app, proxied by nginx). `LLDAP_ADMIN_PASS` env var (default `Test1234!`) controls initial admin credentials. |
 | ✅ | Column selector in card edit view | Column is the first row in the Attributes sidebar section; `<select>` dropdown in edit mode saves `columnId` via existing PATCH endpoint; dirty-ring, ✎ indicator, and navigation-guard consistent with other attributes (touch-friendly alternative to drag-and-drop) |
 | ✅ | Board edit mode | Owner-only toggle in board toolbar; board starts in view mode (cards remain fully interactive); edit mode unlocks: board name inline editing (auto-saves on blur), column ← → reorder buttons, column delete (cascade-deletes cards, confirmation required), add column modal, Members modal, Delete board (confirmation required); non-owners and editors never see the edit toggle |
 | ⬜ | Card linking | Link cards to each other; display in sidebar |

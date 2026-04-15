@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `scripts/init.sh` generates a random `LLDAP_JWT_SECRET` and persists it to `.env` on first run; generates `config/dex.yaml` with the LDAP connector config (no more bcrypt hashing)
 - `config/dex.yaml.example` updated to reflect the LDAP connector; manual generation now requires substituting both `${FLEXBOARD_BASE_URL}` and `${LLDAP_ADMIN_PASS}` via `sed`
 - `docker-compose.yml` and `docker-compose.prod.yml`: added `lldap` service and `lldap-data` volume; `dex` now depends on `lldap: service_healthy`
+- LLDAP web UI proxied through the main nginx at `/useradmin/` (same host and port as the app); direct port 17170 is still exposed for debugging; `LLDAP_HTTP_URL` includes the `/useradmin` subpath so LLDAP's `<base href>` resolves correctly (requires LLDAP v0.6.0+, which `lldap/lldap:stable` provides)
 
 ## [0.5.1] - 2026-04-15
 
