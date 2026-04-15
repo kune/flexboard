@@ -92,7 +92,7 @@ services:
       - "${LLDAP_PORT:-17170}:17170"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "/app/lldap", "healthcheck", "--config", "/data/lldap_config.toml"]
+      test: ["CMD", "/app/lldap", "healthcheck", "--config-file", "/data/lldap_config.toml"]
       interval: 10s
       timeout: 5s
       retries: 5
