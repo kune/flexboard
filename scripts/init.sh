@@ -114,12 +114,12 @@ else
 fi
 
 # ── 3. Generate Rauthy bootstrap client config ────────────────────────────────
+# Always regenerate — the redirect URIs are derived from BASE_URL so this file
+# must stay in sync if init.sh is re-run with a different URL.
+# (Only takes effect on a fresh Rauthy DB; updating an existing client requires
+# using the admin UI at BASE_URL/rauthy.)
 step "OIDC client bootstrap"
-if [[ -f "$BOOTSTRAP_CLIENTS" ]]; then
-  log "Found existing $BOOTSTRAP_CLIENTS — skipping generation."
-else
-  mkdir -p "$BOOTSTRAP_DIR"
-
+mkdir -p "$BOOTSTRAP_DIR"
   cat > "$BOOTSTRAP_CLIENTS" <<EOF
 [
   {
@@ -143,8 +143,7 @@ else
   }
 ]
 EOF
-  log "Created $BOOTSTRAP_CLIENTS"
-fi
+log "Wrote $BOOTSTRAP_CLIENTS"
 
 # ── 4. Build and start all services ──────────────────────────────────────────
 step "Building and starting all services"
