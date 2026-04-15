@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-15 (Rauthy replaces Dex + LLDAP)  
+> **Last updated:** 2026-04-15 (Rauthy replaces Dex + LLDAP; OpenResty Lua cookie fix for HTTP deployments)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -43,13 +43,13 @@
 | ✅ | Configure ESLint + Prettier across monorepo | Root-level config, per-package overrides |
 | ✅ | Configure TypeScript (`tsconfig.json`) per package | Strict mode; path aliases |
 | ✅ | Write `backend.Dockerfile` (multi-stage) | Build → lean Node.js runtime image |
-| ✅ | Write `frontend.Dockerfile` (multi-stage) | Build → Nginx serving SPA |
+| ✅ | Write `frontend.Dockerfile` (multi-stage) | Build → **OpenResty** serving SPA (nginx + LuaJIT; OpenResty required to rewrite Rauthy's `__Host-` Secure cookies for plain HTTP deployments) |
 | ✅ | Write `docker-compose.yml` | All 4 containers; internal network |
 | ✅ | Write `docker-compose.dev.yml` | Dev overrides: infrastructure only, apps run locally |
 | ✅ | Configure OIDC provider | Originally Zitadel; replaced by **Rauthy** (`ghcr.io/sebadob/rauthy:0.35.1`), a single Rust-based self-hosted IdP with built-in user management. `scripts/init.sh` generates `RAUTHY_ENC_KEYS` into `.env` and creates `config/rauthy-bootstrap/clients.json`. Rauthy admin UI proxied by nginx at `/rauthy` (same host/port as the app). |
 | ✅ | Integrate OIDC into frontend (OIDC client, login redirect) | `lib/auth.ts` — `oidc-client-ts`, PKCE. Authority: `http://localhost/rauthy`. Endpoints pre-seeded in metadata to avoid discovery fetch issues with self-signed certs. |
 | ✅ | Validate JWT in backend (`jose` + Rauthy JWKS) | `lib/auth.ts` — `createRemoteJWKSet`; `requireAuth` preHandler on all routes. `RAUTHY_ISSUER` / `RAUTHY_JWKS_URL` env vars. |
-| ✅ | Verify full auth round-trip via `docker compose up` | Login → Rauthy → `/auth/callback` → token → `/api/v1/me` ✓ |
+| ✅ | Verify full auth round-trip via `docker compose up` | Login → Rauthy → `/auth/callback` → token → `/api/v1/me` ✓; works over plain HTTP including Safari (OpenResty Lua strips `__Host-` prefix and `Secure` flag from session cookies) |
 
 ---
 

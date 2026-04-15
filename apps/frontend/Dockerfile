@@ -30,7 +30,12 @@ RUN pnpm --filter @flexboard/shared build
 RUN pnpm --filter @flexboard/frontend build
 
 # ── Stage 2: Serve ───────────────────────────────────────
-FROM nginx:1.27-alpine
+# OpenResty = nginx + LuaJIT, needed to rewrite Rauthy's __Host- Secure cookies
+# for HTTP deployments (Rauthy 0.35+ always sets Secure cookies unconditionally).
+FROM openresty/openresty:alpine
+
+# envsubst (for config.js injection at startup)
+RUN apk add --no-cache gettext
 
 COPY --from=builder /app/apps/frontend/dist /usr/share/nginx/html
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
@@ -40,9 +45,8 @@ COPY docker/config.js.template /etc/nginx/config.js.template
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s \
-  CMD wget -qO- http://127.0.0.1/health || exit 1
+  CMD wget -qO- http://127.0.0.1/ || exit 1
 
-# Generate /config.js from the template (substitutes ${OIDC_ISSUER} env var),
-# then start Nginx. envsubst is included in the official nginx:alpine image.
+# Generate /config.js from the template, then start OpenResty/nginx.
 CMD ["/bin/sh", "-c", \
   "envsubst '${OIDC_ISSUER}' < /etc/nginx/config.js.template > /usr/share/nginx/html/config.js && exec nginx -g 'daemon off;'"]

@@ -21,7 +21,7 @@ services:
   #   /api/*    → local backend dev server (:3001)
   #   /*        → local Vite dev server (:5173, includes HMR WebSocket)
   nginx:
-    image: nginx:1.27-alpine
+    image: openresty/openresty:alpine
     ports:
       - "${FRONTEND_PORT:-80}:80"
     volumes:
