@@ -1,0 +1,48 @@
+<svg width="100%" viewBox="180 58 320 150" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Flexboard logo (dark)</title>
+  <desc>Flexboard promo logo — dark background version</desc>
+
+  <!-- Mark: 3-column kanban grid -->
+  <g transform="translate(190, 68)">
+    <!-- Column 1 -->
+    <rect x="0" y="0" width="44" height="10" rx="3" fill="#fff" opacity="0.85"/>
+    <rect x="0" y="16" width="44" height="42" rx="4" fill="#fff" opacity="0.13"/>
+    <rect x="0" y="64" width="44" height="28" rx="4" fill="#fff" opacity="0.13"/>
+    <rect x="4" y="20" width="16" height="3" rx="1.5" fill="#fff" opacity="0.45"/>
+    <rect x="4" y="27" width="28" height="2" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="4" y="32" width="22" height="2" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="4" y="68" width="20" height="3" rx="1.5" fill="#fff" opacity="0.45"/>
+    <rect x="4" y="75" width="28" height="2" rx="1" fill="#fff" opacity="0.22"/>
+
+    <!-- Column 2 (accent blue) -->
+    <rect x="52" y="0" width="44" height="10" rx="3" fill="#2563EB" opacity="0.9"/>
+    <rect x="52" y="16" width="44" height="28" rx="4" fill="#2563EB" opacity="0.12"/>
+    <rect x="52" y="50" width="44" height="42" rx="4" fill="#2563EB" opacity="0.12"/>
+    <rect x="56" y="20" width="18" height="3" rx="1.5" fill="#2563EB" opacity="0.7"/>
+    <rect x="56" y="27" width="28" height="2" rx="1" fill="#2563EB" opacity="0.35"/>
+    <rect x="56" y="54" width="16" height="3" rx="1.5" fill="#2563EB" opacity="0.7"/>
+    <rect x="56" y="61" width="28" height="2" rx="1" fill="#2563EB" opacity="0.35"/>
+    <rect x="56" y="66" width="22" height="2" rx="1" fill="#2563EB" opacity="0.35"/>
+    <rect x="56" y="75" width="18" height="2" rx="1" fill="#2563EB" opacity="0.35"/>
+
+    <!-- Column 3 -->
+    <rect x="104" y="0" width="44" height="10" rx="3" fill="#fff" opacity="0.85"/>
+    <rect x="104" y="16" width="44" height="56" rx="4" fill="#fff" opacity="0.13"/>
+    <rect x="108" y="20" width="14" height="3" rx="1.5" fill="#fff" opacity="0.45"/>
+    <rect x="108" y="27" width="28" height="2" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="108" y="32" width="20" height="2" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="108" y="38" width="24" height="2" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="108" y="44" width="16" height="2" rx="1" fill="#fff" opacity="0.22"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="340" y="148" text-anchor="middle" font-size="52" font-weight="300" letter-spacing="-1.5" font-family="'DM Sans', sans-serif">
+    <tspan font-weight="500" fill="#fff">flex</tspan><tspan fill="#2563EB" font-weight="500">board</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="340" y="180" text-anchor="middle" font-size="14" letter-spacing="3" font-weight="300" fill="#c8c8c6" font-family="'DM Sans', sans-serif">WORK IN FLOW</text>
+
+  <!-- Divider -->
+  <line x1="240" y1="198" x2="440" y2="198" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+</svg>

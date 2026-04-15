@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Marketing website (`website/`) — single-page landing site for flexboard.org with light/dark mode toggle, kanban board mockup, feature overview, getting-started code snippet, and tech stack section; ready for GitHub Pages hosting (includes `CNAME` file)
+- SVG logo assets (`icons/`): cropped viewBoxes to remove excess whitespace on all four logos; added dark-background variants (`icon_dark.svg`, `logo_header_dark.svg`, `logo_promo_dark.svg`, `logo_v4_dark.svg`)
+
 ## [0.5.1] - 2026-04-15
 
 ### Changed

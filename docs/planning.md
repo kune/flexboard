@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-15 (v0.5.1: Libravatar instead of Gravatar)  
+> **Last updated:** 2026-04-15 (post-v0.5.1: marketing website, logo assets)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -165,3 +165,12 @@
 | ⬜ | CI pipeline (GitHub Actions or GitLab CI) | Lint → test → build → push Docker images |
 | ⬜ | Environment configuration guide | `.env.example`; deployment checklist |
 | ⬜ | Update architecture document | Reflect any deviations made during implementation |
+
+---
+
+## Marketing & Distribution
+
+| Status | Task | Notes |
+|--------|------|-------|
+| ✅ | Landing page (`website/`) | One-page marketing site for flexboard.org; light/dark mode; kanban mockup; GitHub Pages ready (`website/CNAME`) |
+| ✅ | Logo SVG assets (`icons/`) | Four logos with cropped viewBoxes; dark-background variants for each |

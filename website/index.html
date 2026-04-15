@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flexboard — Self-Hosted Kanban for Teams</title>
+  <meta name="description" content="A self-hosted Kanban board with real-time collaboration, OIDC authentication, and schema-driven card types. Your data stays on your server.">
+  <meta property="og:title" content="Flexboard — Self-Hosted Kanban for Teams">
+  <meta property="og:description" content="Real-time Kanban, OIDC auth, and schema-driven cards — fully self-hosted. Work in Flow.">
+  <meta property="og:url" content="https://flexboard.org">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Reset ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    /* ─── Theme Variables ────────────────────────────────── */
+    :root {
+      --bg:          #ffffff;
+      --bg-alt:      #f7f7f6;
+      --bg-card:     #ffffff;
+      --bg-code:     #1e1e1c;
+      --bg-code-hdr: #2a2a28;
+      --text-1:      #141413;
+      --text-2:      #575753;
+      --text-3:      #9f9f9a;
+      --border:      rgba(20, 20, 19, 0.1);
+      --accent:      #2563eb;
+      --accent-h:    #1d4ed8;
+      --accent-s:    #eff6ff;
+      --accent-st:   #1d4ed8;
+      --shadow-s: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+      --shadow-m: 0 4px 16px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.05);
+      --r:  10px;
+      --rs:  6px;
+    }
+    [data-theme="dark"] {
+      --bg:          #0e0e0d;
+      --bg-alt:      #161614;
+      --bg-card:     #1c1c1a;
+      --bg-code:     #141412;
+      --bg-code-hdr: #1e1e1c;
+      --text-1:      #f0f0ee;
+      --text-2:      #a0a09b;
+      --text-3:      #636360;
+      --border:      rgba(255, 255, 255, 0.09);
+      --accent:      #3b82f6;
+      --accent-h:    #60a5fa;
+      --accent-s:    rgba(59, 130, 246, 0.12);
+      --accent-st:   #93c5fd;
+      --shadow-s: 0 1px 3px rgba(0,0,0,.4),  0 1px 2px rgba(0,0,0,.3);
+      --shadow-m: 0 4px 16px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.3);
+    }
+
+    /* ─── Base ───────────────────────────────────────────── */
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      transition: background .25s, color .25s;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-h); }
+
+    /* ─── Layout ─────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* ─── Helpers ────────────────────────────────────────── */
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-size: clamp(26px, 3.5vw, 40px);
+      font-weight: 600;
+      letter-spacing: -1px;
+      line-height: 1.18;
+      color: var(--text-1);
+      margin-bottom: 14px;
+    }
+    .section-sub {
+      font-size: 17px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--text-2);
+      max-width: 580px;
+    }
+
+    /* ─── Nav ────────────────────────────────────────────── */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: background .25s, border-color .25s;
+    }
+    [data-theme="dark"] .nav { background: rgba(14, 14, 13, 0.88); }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      height: 58px;
+    }
+    .nav-logo { display: flex; align-items: center; flex-shrink: 0; }
+    .nav-spacer { flex: 1; }
+    .nav-link {
+      font-size: 14px;
+      color: var(--text-2);
+      padding: 6px 12px;
+      border-radius: var(--rs);
+      transition: color .15s, background .15s;
+    }
+    .nav-link:hover { color: var(--text-1); background: var(--border); }
+    .nav-gh {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-1);
+      border: 1px solid var(--border);
+      border-radius: var(--rs);
+      padding: 6px 14px;
+      margin-left: 4px;
+      transition: border-color .15s, background .15s;
+    }
+    .nav-gh:hover { color: var(--text-1); background: var(--bg-alt); border-color: var(--text-3); }
+    .theme-btn {
+      width: 36px; height: 36px;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--rs);
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-2);
+      display: flex; align-items: center; justify-content: center;
+      margin-left: 6px;
+      transition: color .15s, background .15s, border-color .15s;
+    }
+    .theme-btn:hover { color: var(--text-1); background: var(--bg-alt); border-color: var(--text-3); }
+    [data-theme="light"] .i-moon { display: none; }
+    [data-theme="dark"]  .i-sun  { display: none; }
+    @media (max-width: 640px) {
+      .nav-link { display: none; }
+    }
+
+    /* ─── Hero ───────────────────────────────────────────── */
+    .hero { padding: 80px 0 64px; overflow: hidden; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    @media (max-width: 880px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 52px; }
+      .hero { padding: 60px 0 52px; }
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-s);
+      border-radius: 100px;
+      padding: 4px 12px;
+      margin-bottom: 22px;
+    }
+    .hero-title {
+      font-size: clamp(36px, 5vw, 58px);
+      font-weight: 600;
+      letter-spacing: -1.8px;
+      line-height: 1.1;
+      color: var(--text-1);
+      margin-bottom: 20px;
+    }
+    .hero-title .hl { color: var(--accent); }
+    .hero-sub {
+      font-size: 18px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--text-2);
+      margin-bottom: 36px;
+      max-width: 460px;
+    }
+    .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-p {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 500;
+      background: var(--accent); color: #fff;
+      padding: 10px 22px; border-radius: var(--rs);
+      transition: background .15s, transform .1s;
+    }
+    .btn-p:hover { background: var(--accent-h); color: #fff; transform: translateY(-1px); }
+    .btn-s {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 15px; font-weight: 500;
+      color: var(--text-1);
+      border: 1px solid var(--border);
+      padding: 10px 22px; border-radius: var(--rs);
+      transition: background .15s, border-color .15s, transform .1s;
+    }
+    .btn-s:hover { color: var(--text-1); background: var(--bg-alt); border-color: var(--text-3); transform: translateY(-1px); }
+    .badge-row {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 28px;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 500;
+      color: var(--text-3);
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 100px; padding: 4px 10px;
+    }
+
+    /* ─── Kanban Demo ────────────────────────────────────── */
+    .hero-visual { position: relative; }
+    /* Board outer wrapper: light grey background matching the app */
+    .demo-wrap {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--r);
+      padding: 12px;
+      box-shadow: var(--shadow-m);
+    }
+    [data-theme="dark"] .demo-wrap {
+      background: #1a1a18;
+      border-color: rgba(255,255,255,.08);
+    }
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    /* Column container: slightly lighter than board bg */
+    .demo-col-inner {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    [data-theme="dark"] .demo-col-inner {
+      background: #1c1c1a;
+      border-color: rgba(255,255,255,.09);
+    }
+    .demo-col-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    [data-theme="dark"] .demo-col-hdr { border-bottom-color: rgba(255,255,255,.09); }
+    .demo-col-name {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #475569;
+    }
+    [data-theme="dark"] .demo-col-name { color: #a0a09b; }
+    .demo-col-name.active { color: var(--accent); }
+    .demo-col-cnt {
+      font-size: 11px; font-weight: 600;
+      background: #e2e8f0; color: #64748b;
+      border-radius: 8px; padding: 1px 6px;
+    }
+    [data-theme="dark"] .demo-col-cnt { background: rgba(255,255,255,.1); color: #636360; }
+    .demo-col-cnt.active { background: var(--accent-s); color: var(--accent-st); }
+    /* Cards: white bg, subtle border, 8px radius — matches .kcard in app */
+    .demo-col-body { padding: 8px; display: flex; flex-direction: column; gap: 7px; }
+    .card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 11px 12px;
+      cursor: default;
+      transition: box-shadow .15s, border-color .15s, transform .12s;
+    }
+    [data-theme="dark"] .card {
+      background: #242422;
+      border-color: rgba(255,255,255,.1);
+    }
+    .card:hover {
+      box-shadow: 0 2px 10px rgba(0,0,0,.09);
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+    [data-theme="dark"] .card:hover { border-color: rgba(255,255,255,.2); }
+    /* Card top row: type badge left, card ID right */
+    .card-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    /* Type badges — exact app colors */
+    .card-lbl {
+      display: inline-block;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .04em; text-transform: uppercase;
+      border-radius: 4px; padding: 2px 7px;
+    }
+    .lbl-task  { background: #dbeafe; color: #1d4ed8; }
+    .lbl-bug   { background: #fee2e2; color: #b91c1c; }
+    .lbl-story { background: #ede9fe; color: #6d28d9; }
+    .lbl-epic  { background: #ffedd5; color: #c2410c; }
+    [data-theme="dark"] .lbl-task  { background: rgba(59,130,246,.18); color: #93c5fd; }
+    [data-theme="dark"] .lbl-bug   { background: rgba(239,68,68,.18);  color: #f87171; }
+    [data-theme="dark"] .lbl-story { background: rgba(139,92,246,.18); color: #a78bfa; }
+    [data-theme="dark"] .lbl-epic  { background: rgba(245,158,11,.18); color: #fcd34d; }
+    /* Short card ID */
+    .card-id {
+      font-size: 11px; font-weight: 500;
+      color: #94a3b8; font-family: 'DM Mono', monospace;
+    }
+    [data-theme="dark"] .card-id { color: #636360; }
+    /* Card title */
+    .card-title {
+      font-size: 13px; font-weight: 500;
+      color: #1e293b; line-height: 1.4;
+      margin-bottom: 9px;
+    }
+    [data-theme="dark"] .card-title { color: #f0f0ee; }
+    /* Card footer: label tags + priority dot + avatar */
+    .card-footer {
+      display: flex; align-items: center;
+      gap: 5px; flex-wrap: wrap;
+    }
+    /* Inline label pill (frontend, backend, etc.) */
+    .card-tag {
+      font-size: 11px; font-weight: 500; color: #475569;
+      background: #f1f5f9; border: 1px solid #e2e8f0;
+      border-radius: 10px; padding: 1px 7px;
+    }
+    [data-theme="dark"] .card-tag {
+      color: #a0a09b; background: rgba(255,255,255,.06);
+      border-color: rgba(255,255,255,.1);
+    }
+    /* Priority dot (8px circle) */
+    .prio-dot {
+      display: inline-block;
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .prio-high { background: #ea580c; }
+    .prio-med  { background: #d97706; }
+    .prio-low  { background: #94a3b8; }
+    /* Assignee avatar — pushed to the right */
+    .av {
+      width: 22px; height: 22px; border-radius: 50%;
+      font-size: 10px; font-weight: 700; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-left: auto;
+    }
+    .av-b { background: #2563eb; }
+    .av-p { background: #7c3aed; }
+    .av-g { background: #16a34a; }
+    .av-o { background: #ea580c; }
+
+    /* Online indicator — replaces the generic "Live" badge */
+    .online-badge {
+      position: absolute; top: -10px; right: -10px;
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 600;
+      color: #fff; background: #16a34a;
+      border-radius: 100px; padding: 3px 10px 3px 8px;
+      border: 2px solid var(--bg);
+      box-shadow: 0 2px 6px rgba(22,163,74,.35);
+    }
+    .online-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #fff; position: relative; flex-shrink: 0;
+    }
+    .online-dot::after {
+      content: ''; position: absolute; inset: -3px;
+      border-radius: 50%; border: 2px solid rgba(255,255,255,.5);
+      animation: ping 1.8s ease-in-out infinite;
+    }
+    @keyframes ping {
+      0%,100% { opacity: 1; transform: scale(1); }
+      60% { opacity: 0; transform: scale(1.8); }
+    }
+
+    /* ─── Sections ───────────────────────────────────────── */
+    section { padding: 88px 0; }
+    section.alt { background: var(--bg-alt); }
+
+    /* ─── Features Grid ──────────────────────────────────── */
+    .feat-grid {
+      margin-top: 52px;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 860px) { .feat-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .feat-grid { grid-template-columns: 1fr; } }
+    .feat-item {
+      padding: 30px 28px 34px;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      transition: background .2s;
+    }
+    .feat-item:nth-child(3n) { border-right: none; }
+    @media (max-width: 860px) {
+      .feat-item:nth-child(2n) { border-right: none; }
+      .feat-item:nth-child(3n) { border-right: 1px solid var(--border); }
+    }
+    @media (max-width: 540px) {
+      .feat-item { border-right: none; }
+    }
+    .feat-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      background: var(--accent-s);
+      color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 18px;
+    }
+    .feat-icon svg { width: 21px; height: 21px; }
+    .feat-name { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 8px; }
+    .feat-desc { font-size: 14px; font-weight: 300; line-height: 1.65; color: var(--text-2); }
+
+    /* ─── Split Sections ─────────────────────────────────── */
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    @media (max-width: 880px) {
+      .split { grid-template-columns: 1fr; gap: 44px; }
+    }
+
+    /* ─── Activity Log ───────────────────────────────────── */
+    .act-log {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 18px;
+      box-shadow: var(--shadow-m);
+    }
+    .act-log-hdr {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text-3);
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+    .act-item {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .act-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .act-content { flex: 1; }
+    .act-text { color: var(--text-2); line-height: 1.5; }
+    .act-text strong { color: var(--text-1); font-weight: 500; }
+    .act-text em { font-style: normal; color: var(--text-3); }
+    .act-time {
+      font-size: 11px; color: var(--text-3);
+      font-family: 'DM Mono', monospace; margin-top: 3px;
+    }
+    .act-live {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #22c55e; margin-top: 7px; flex-shrink: 0;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+    /* ─── Check List ─────────────────────────────────────── */
+    .check-list { list-style: none; display: flex; flex-direction: column; gap: 13px; margin-top: 28px; }
+    .check-list li { display: flex; align-items: flex-start; gap: 11px; font-size: 15px; font-weight: 300; color: var(--text-2); line-height: 1.5; }
+    .check-icon {
+      width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 2px;
+      background: #dcfce7; color: #16a34a;
+      display: flex; align-items: center; justify-content: center;
+    }
+    [data-theme="dark"] .check-icon { background: rgba(22,163,74,.15); color: #86efac; }
+    .check-icon svg { width: 10px; height: 10px; }
+
+    /* ─── Data Residency Card ────────────────────────────── */
+    .residency-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 28px;
+      box-shadow: var(--shadow-m);
+    }
+    .residency-hdr {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+      color: var(--text-3); margin-bottom: 20px;
+    }
+    .residency-row {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--bg-alt); border-radius: var(--rs);
+      padding: 14px 16px; margin-bottom: 10px;
+    }
+    .residency-row:last-child { margin-bottom: 0; }
+    .res-icon {
+      width: 38px; height: 38px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .res-icon svg { width: 18px; height: 18px; }
+    .res-title { font-size: 14px; font-weight: 600; color: var(--text-1); }
+    .res-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+    /* ─── Code Window ────────────────────────────────────── */
+    .code-win {
+      background: var(--bg-code);
+      border-radius: var(--r);
+      overflow: hidden;
+      box-shadow: var(--shadow-m);
+      font-family: 'DM Mono', 'Fira Mono', monospace;
+    }
+    .code-win-hdr {
+      display: flex; align-items: center; gap: 6px;
+      padding: 12px 16px;
+      background: var(--bg-code-hdr);
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .win-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .win-dot.r { background: #ff5f57; }
+    .win-dot.y { background: #febc2e; }
+    .win-dot.g { background: #28c840; }
+    .code-file { font-size: 12px; color: #888; margin-left: 6px; font-family: 'DM Mono', monospace; }
+    .code-body { padding: 22px 26px; overflow-x: auto; }
+    pre { font-size: 13px; line-height: 1.75; color: #d4d4d0; white-space: pre; }
+    .t-cmt  { color: #555552; }
+    .t-cmd  { color: #d4d4d0; }
+    .t-str  { color: #86efac; }
+    .t-kw   { color: #f97316; }
+    .t-flag { color: #c4b5fd; }
+
+    /* ─── Stack Pills ────────────────────────────────────── */
+    .stack-wrap {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-top: 48px;
+    }
+    .stack-pill {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px; font-weight: 500; color: var(--text-2);
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 100px; padding: 6px 16px;
+      transition: color .15s, border-color .15s;
+    }
+    .stack-pill:hover { color: var(--text-1); border-color: var(--text-3); }
+    .s-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* ─── Footer ─────────────────────────────────────────── */
+    footer {
+      padding: 44px 0;
+      border-top: 1px solid var(--border);
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 20px;
+    }
+    .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+    .footer-link { font-size: 14px; color: var(--text-3); transition: color .15s; }
+    .footer-link:hover { color: var(--text-2); }
+    .footer-copy { font-size: 13px; color: var(--text-3); }
+
+    /* ─── Scroll Reveal ──────────────────────────────────── */
+    .r0 { opacity:0; transform:translateY(22px); transition:opacity .5s ease, transform .5s ease; }
+    .r0.on { opacity:1; transform:translateY(0); }
+    .r1 { transition-delay: .1s; }
+    .r2 { transition-delay: .18s; }
+    .r3 { transition-delay: .26s; }
+    .r4 { transition-delay: .34s; }
+    .r5 { transition-delay: .42s; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════ NAV ════════════════════════════ -->
+<nav class="nav">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo" id="j-logo"></a>
+      <div class="nav-spacer"></div>
+      <a href="#features"      class="nav-link">Features</a>
+      <a href="#realtime"      class="nav-link">Real-Time</a>
+      <a href="#self-hosted"   class="nav-link">Self-Hosted</a>
+      <a href="#get-started"   class="nav-link">Get Started</a>
+      <a href="https://github.com/kune/flexboard" class="nav-gh" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub
+      </a>
+      <button class="theme-btn" id="j-theme" aria-label="Toggle light/dark mode">
+        <svg class="i-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="i-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ════════════════════════ HERO ═══════════════════════════ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+
+      <!-- Left: copy -->
+      <div>
+        <div class="hero-eyebrow">
+          <svg width="7" height="7" viewBox="0 0 7 7" fill="currentColor" aria-hidden="true"><circle cx="3.5" cy="3.5" r="3.5"/></svg>
+          Open Source · Self-Hosted · Free Forever
+        </div>
+        <h1 class="hero-title">Work in Flow.<br>On <span class="hl">Your</span> Terms.</h1>
+        <p class="hero-sub">A self-hosted Kanban application with unlimited boards, real-time collaboration, OIDC authentication, and schema-driven card types. Your data lives on your server — always.</p>
+        <div class="hero-ctas">
+          <a href="#get-started" class="btn-p">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Get Started
+          </a>
+          <a href="https://github.com/kune/flexboard" class="btn-s" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            View on GitHub
+          </a>
+        </div>
+        <div class="badge-row">
+          <span class="badge">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            v0.5.1 stable
+          </span>
+          <span class="badge">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            MIT License
+          </span>
+          <span class="badge">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Docker Ready
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: Kanban mockup -->
+      <div class="hero-visual">
+        <!-- 3 users currently viewing this board -->
+        <div class="online-badge" aria-hidden="true">
+          <span class="online-dot"></span>
+          3 Online
+        </div>
+        <div class="demo-wrap">
+          <div class="demo-grid">
+
+            <!-- Backlog -->
+            <div class="demo-col-inner">
+              <div class="demo-col-hdr">
+                <span class="demo-col-name">Backlog</span>
+                <span class="demo-col-cnt">3</span>
+              </div>
+              <div class="demo-col-body">
+                <div class="card">
+                  <div class="card-top">
+                    <span class="card-lbl lbl-epic">Epic</span>
+                    <span class="card-id">#3a7b2</span>
+                  </div>
+                  <div class="card-title">User dashboard redesign</div>
+                  <div class="card-footer">
+                    <span class="card-tag">frontend</span>
+                    <span class="prio-dot prio-med" title="Medium priority"></span>
+                    <span class="av av-p">MK</span>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-top">
+                    <span class="card-lbl lbl-bug">Bug</span>
+                    <span class="card-id">#1c9e4</span>
+                  </div>
+                  <div class="card-title">Fix scroll on iOS Safari</div>
+                  <div class="card-footer">
+                    <span class="prio-dot prio-high" title="High priority"></span>
+                    <span class="av av-b">AK</span>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-top">
+                    <span class="card-lbl lbl-task">Task</span>
+                    <span class="card-id">#8d2f1</span>
+                  </div>
+                  <div class="card-title">Write API documentation</div>
+                  <div class="card-footer">
+                    <span class="card-tag">backend</span>
+                    <span class="prio-dot prio-low" title="Low priority"></span>
+                    <span class="av av-g">SR</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- In Progress -->
+            <div class="demo-col-inner">
+              <div class="demo-col-hdr">
+                <span class="demo-col-name active">In Progress</span>
+                <span class="demo-col-cnt active">2</span>
+              </div>
+              <div class="demo-col-body">
+                <div class="card">
+                  <div class="card-top">
+                    <span class="card-lbl lbl-story">Story</span>
+                    <span class="card-id">#5f0a3</span>
+                  </div>
+                  <div class="card-title">Real-time card sync via SSE</div>
+                  <div class="card-footer">
+                    <span class="prio-dot prio-high" title="High priority"></span>
+                    <span class="av av-b">AK</span>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-top">
+                    <span class="card-lbl lbl-task">Task</span>
+                    <span class="card-id">#2b8c7</span>
+                  </div>
+                  <div class="card-title">OIDC role-based access</div>
+                  <div class="card-footer">
+                    <span class="card-tag">auth</span>
+                    <span class="prio-dot prio-med" title="Medium priority"></span>
+                    <span class="av av-o">LW</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Done -->
+            <div class="demo-col-inner">
+              <div class="demo-col-hdr">
+                <span class="demo-col-name">Done</span>
+                <span class="demo-col-cnt">2</span>
+              </div>
+              <div class="demo-col-body">
+                <div class="card">
+                  <div class="card-top">
+                    <span class="card-lbl lbl-story">Story</span>
+                    <span class="card-id">#7e1d9</span>
+                  </div>
+                  <div class="card-title">Touch drag-and-drop support</div>
+                  <div class="card-footer">
+                    <span class="prio-dot prio-med" title="Medium priority"></span>
+                    <span class="av av-p">MK</span>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="card-top">
+                    <span class="card-lbl lbl-task">Task</span>
+                    <span class="card-id">#4a6e0</span>
+                  </div>
+                  <div class="card-title">Docker Compose setup</div>
+                  <div class="card-footer">
+                    <span class="card-tag">infra</span>
+                    <span class="prio-dot prio-low" title="Low priority"></span>
+                    <span class="av av-g">SR</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /demo-grid -->
+        </div><!-- /demo-wrap -->
+      </div><!-- /hero-visual -->
+
+    </div><!-- /hero-grid -->
+  </div>
+</section>
+
+<!-- ═══════════════════════ FEATURES ════════════════════════ -->
+<section id="features" class="alt">
+  <div class="container">
+    <div class="section-label r0">Built for real teams</div>
+    <h2 class="section-title r0 r1">Everything your workflow needs</h2>
+    <p class="section-sub r0 r2">Create as many boards as your team needs. Flexboard is designed around real workflows — from solo developers to growing teams — with the flexibility to adapt as your process evolves.</p>
+
+    <div class="feat-grid">
+
+      <div class="feat-item r0 r1">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="5" rx="2"/><rect x="2" y="10" width="20" height="5" rx="2"/><rect x="2" y="17" width="20" height="5" rx="2"/><line x1="6" y1="5.5" x2="6.01" y2="5.5" stroke-width="2"/><line x1="6" y1="12.5" x2="6.01" y2="12.5" stroke-width="2"/><line x1="6" y1="19.5" x2="6.01" y2="19.5" stroke-width="2"/></svg>
+        </div>
+        <div class="feat-name">Fully Self-Hosted</div>
+        <div class="feat-desc">Deploy on any infrastructure — VPS, bare metal, or your home server. Your data never touches a third-party cloud. No subscriptions, no lock-in.</div>
+      </div>
+
+      <div class="feat-item r0 r2">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="feat-name">Real-Time Collaboration</div>
+        <div class="feat-desc">Server-Sent Events keep every member in sync. Card moves, edits, and comments appear instantly across all connected clients — no polling required.</div>
+      </div>
+
+      <div class="feat-item r0 r3">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        </div>
+        <div class="feat-name">Schema-Driven Cards</div>
+        <div class="feat-desc">Define custom card types — task, bug, story, epic — each with typed attributes: dates, labels, priorities, user references. Adapts to your process.</div>
+      </div>
+
+      <div class="feat-item r0 r2">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="feat-name">OIDC Authentication</div>
+        <div class="feat-desc">Bundled self-hosted Dex provides enterprise-grade identity. Granular roles — Owner, Editor, Viewer — enforce access at the board level via JWT.</div>
+      </div>
+
+      <div class="feat-item r0 r3">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"/></svg>
+        </div>
+        <div class="feat-name">Mobile-First Design</div>
+        <div class="feat-desc">Scroll-snap Kanban, touch drag-and-drop, and 44 px tap targets make Flexboard fully usable on phones and tablets — a first-class experience, not an afterthought.</div>
+      </div>
+
+      <div class="feat-item r0 r4">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="feat-name">Markdown Everywhere</div>
+        <div class="feat-desc">Rich Markdown in card descriptions, board summaries, and custom text attributes. Syntax highlighting, emoji, and acceptance-criteria checklists included out of the box.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ REAL-TIME ══════════════════════ -->
+<section id="realtime">
+  <div class="container">
+    <div class="split">
+
+      <div>
+        <div class="section-label r0">Live Updates</div>
+        <h2 class="section-title r0 r1">Your board, always in sync</h2>
+        <p class="section-sub r0 r2">Powered by Server-Sent Events, every change lands on all connected clients the moment it happens. Move a card, update an attribute, post a comment — your team sees it without refreshing.</p>
+        <ul class="check-list r0 r2">
+          <li>
+            <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5 4 7.5 8.5 2.5"/></svg></span>
+            Card movements and reorders broadcast to all viewers instantly
+          </li>
+          <li>
+            <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5 4 7.5 8.5 2.5"/></svg></span>
+            Attribute edits and comments appear across sessions without refresh
+          </li>
+          <li>
+            <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5 4 7.5 8.5 2.5"/></svg></span>
+            Full activity log with before/after values for every change
+          </li>
+          <li>
+            <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5 4 7.5 8.5 2.5"/></svg></span>
+            Board membership updates refresh the dashboard live
+          </li>
+        </ul>
+      </div>
+
+      <div class="r0 r2">
+        <div class="act-log">
+          <div class="act-log-hdr">Activity — Product Roadmap</div>
+          <div class="act-item">
+            <span class="av av-b" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;font-size:9px;">AK</span>
+            <div class="act-content">
+              <div class="act-text"><strong>Alex</strong> moved <strong>OIDC auth</strong> from <em>Backlog</em> to <em>In Progress</em></div>
+              <div class="act-time">just now</div>
+            </div>
+            <span class="act-live" aria-hidden="true"></span>
+          </div>
+          <div class="act-item">
+            <span class="av av-o" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;font-size:9px;">LW</span>
+            <div class="act-content">
+              <div class="act-text"><strong>Lisa</strong> changed priority on <strong>iOS scroll bug</strong>: Low → <strong>High</strong></div>
+              <div class="act-time">1 min ago</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <span class="av av-p" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;font-size:9px;">MK</span>
+            <div class="act-content">
+              <div class="act-text"><strong>Max</strong> added a comment on <strong>Dashboard redesign</strong></div>
+              <div class="act-time">4 min ago</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <span class="av av-g" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;font-size:9px;">SR</span>
+            <div class="act-content">
+              <div class="act-text"><strong>Sara</strong> moved <strong>Docker Compose setup</strong> to <em>Done</em></div>
+              <div class="act-time">14 min ago</div>
+            </div>
+          </div>
+          <div class="act-item">
+            <span class="av av-b" style="flex-shrink:0;margin-top:1px;width:22px;height:22px;font-size:9px;">AK</span>
+            <div class="act-content">
+              <div class="act-text"><strong>Alex</strong> created board <strong>Product Roadmap</strong></div>
+              <div class="act-time">2 hours ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═════════════════════ SELF-HOSTED ════════════════════════ -->
+<section id="self-hosted" class="alt">
+  <div class="container">
+    <div class="split">
+
+      <div class="r0">
+        <div class="residency-card">
+          <div class="residency-hdr">Data Residency</div>
+          <div class="residency-row">
+            <div class="res-icon" style="background:var(--accent-s);color:var(--accent);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div>
+              <div class="res-title">Your infrastructure</div>
+              <div class="res-sub">Data never leaves your server</div>
+            </div>
+          </div>
+          <div class="residency-row">
+            <div class="res-icon" style="background:rgba(139,92,246,.12);color:#7c3aed;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div>
+              <div class="res-title">Self-hosted identity</div>
+              <div class="res-sub">OIDC via Dex — no third-party IdP</div>
+            </div>
+          </div>
+          <div class="residency-row">
+            <div class="res-icon" style="background:rgba(22,163,74,.12);color:#16a34a;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div class="res-title">Open source — MIT licensed</div>
+              <div class="res-sub">Audit, fork, and extend without restrictions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label r0">Data Ownership</div>
+        <h2 class="section-title r0 r1">Your data. Your server. Your rules.</h2>
+        <p class="section-sub r0 r2">No subscriptions, no vendor lock-in, no data leaving your perimeter. Flexboard is built for teams that take data sovereignty seriously.</p>
+        <ul class="check-list r0 r2">
+          <li>
+            <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5 4 7.5 8.5 2.5"/></svg></span>
+            Deploy on-premises, in your private cloud, or on a VPS
+          </li>
+          <li>
+            <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5 4 7.5 8.5 2.5"/></svg></span>
+            Accessible under multiple URLs — internal LAN and external domain
+          </li>
+          <li>
+            <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5 4 7.5 8.5 2.5"/></svg></span>
+            No telemetry, no analytics, no external requests at runtime
+          </li>
+          <li>
+            <span class="check-icon" aria-hidden="true"><svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 5 4 7.5 8.5 2.5"/></svg></span>
+            GDPR-friendly by design — you control all user data
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ GET STARTED ═════════════════════ -->
+<section id="get-started">
+  <div class="container">
+    <div class="section-label r0">Deploy in minutes</div>
+    <h2 class="section-title r0 r1">Up and running with Docker</h2>
+    <p class="section-sub r0 r2" style="margin-bottom:40px;">Flexboard ships as a set of Docker images. Clone the repo, adjust the environment file, and you're live. No external services required.</p>
+
+    <div class="code-win r0 r2">
+      <div class="code-win-hdr">
+        <span class="win-dot r"></span>
+        <span class="win-dot y"></span>
+        <span class="win-dot g"></span>
+        <span class="code-file">terminal</span>
+      </div>
+      <div class="code-body">
+<pre><span class="t-cmt"># 1. Clone the repository</span>
+<span class="t-cmd">git clone https://github.com/kune/flexboard</span>
+<span class="t-cmd">cd flexboard</span>
+
+<span class="t-cmt"># 2. Configure your environment</span>
+<span class="t-cmd">cp .env.example .env</span>
+<span class="t-cmd">$EDITOR .env     <span class="t-cmt"># set domain, MongoDB URI, Dex secrets</span></span>
+
+<span class="t-cmt"># 3. Start all services</span>
+<span class="t-cmt">#    Spins up: Dex · MongoDB · Backend · Frontend · nginx</span>
+<span class="t-cmd">docker compose up <span class="t-flag">-d</span></span>
+
+<span class="t-cmt"># Flexboard is running at http://localhost</span>
+<span class="t-cmt"># Open the URL, create your first account, and invite your team.</span></pre>
+      </div>
+    </div>
+
+    <p style="margin-top:18px;font-size:14px;color:var(--text-3);text-align:center;">
+      Requires Docker 24+ and Docker Compose v2 · No other dependencies needed
+    </p>
+  </div>
+</section>
+
+<!-- ════════════════════════ TECH STACK ═════════════════════ -->
+<section id="stack" class="alt">
+  <div class="container">
+    <div class="section-label r0">Technology</div>
+    <h2 class="section-title r0 r1">Built on a proven stack</h2>
+    <p class="section-sub r0 r2">A full-stack TypeScript monorepo. Every component is open source and production-grade.</p>
+
+    <div class="stack-wrap r0 r2">
+      <span class="stack-pill"><span class="s-dot" style="background:#3b82f6;"></span>React 19</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#f97316;"></span>Fastify 5</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#4ade80;"></span>MongoDB</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#3178c6;"></span>TypeScript</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#a78bfa;"></span>Dex (OIDC)</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#facc15;"></span>Vite</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#60a5fa;"></span>TanStack Query v5</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#f472b6;"></span>dnd-kit</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#34d399;"></span>Docker</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#fb923c;"></span>pnpm + Turborepo</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#818cf8;"></span>Node.js 22</span>
+      <span class="stack-pill"><span class="s-dot" style="background:#2dd4bf;"></span>nginx</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ FOOTER ═════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div id="j-footer-logo"></div>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="https://github.com/kune/flexboard" class="footer-link" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/kune/flexboard/blob/main/CHANGELOG.md" class="footer-link" target="_blank" rel="noopener">Changelog</a>
+        <a href="https://github.com/kune/flexboard/issues" class="footer-link" target="_blank" rel="noopener">Issues</a>
+        <a href="https://github.com/kune/flexboard/blob/main/LICENSE" class="footer-link" target="_blank" rel="noopener">MIT License</a>
+      </nav>
+      <div class="footer-copy">© 2026 Flexboard · v0.5.1</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ════════════════════════ SCRIPT ═════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── Theme ─────────────────────────────────────────────── */
+  const html = document.documentElement;
+  const btn  = document.getElementById('j-theme');
+  const KEY  = 'fb-theme';
+
+  function applyTheme(t) {
+    html.setAttribute('data-theme', t);
+    localStorage.setItem(KEY, t);
+    renderLogos();
+  }
+
+  const saved   = localStorage.getItem(KEY);
+  const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved ?? (sysDark ? 'dark' : 'light'));
+
+  btn.addEventListener('click', function () {
+    applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  /* ── Logos ─────────────────────────────────────────────── */
+  // Inline SVG logo — light and dark variants
+  function logoSVG(dark) {
+    var textFill  = dark ? '#f0f0ee' : '#141413';
+    var blue      = dark ? '#3b82f6' : '#2563eb';
+    var markFill  = dark ? '#fff'    : '#141413';
+    return '<svg height="26" viewBox="192 24 296 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+      + '<g transform="translate(202,32)">'
+      + '<g transform="scale(0.5) translate(0,4)">'
+      // col 1
+      + '<rect x="0"  y="0"  width="26" height="6"  rx="2" fill="' + markFill + '" opacity="0.85"/>'
+      + '<rect x="0"  y="10" width="26" height="25" rx="3" fill="' + markFill + '" opacity="0.13"/>'
+      + '<rect x="0"  y="39" width="26" height="17" rx="3" fill="' + markFill + '" opacity="0.13"/>'
+      + '<rect x="3"  y="13" width="10" height="2"  rx="1" fill="' + markFill + '" opacity="0.45"/>'
+      + '<rect x="3"  y="18" width="17" height="1.5" rx="1" fill="' + markFill + '" opacity="0.22"/>'
+      + '<rect x="3"  y="22" width="13" height="1.5" rx="1" fill="' + markFill + '" opacity="0.22"/>'
+      + '<rect x="3"  y="42" width="12" height="2"  rx="1" fill="' + markFill + '" opacity="0.45"/>'
+      + '<rect x="3"  y="47" width="17" height="1.5" rx="1" fill="' + markFill + '" opacity="0.22"/>'
+      // col 2 (blue)
+      + '<rect x="30" y="0"  width="26" height="6"  rx="2" fill="' + blue + '" opacity="0.9"/>'
+      + '<rect x="30" y="10" width="26" height="17" rx="3" fill="' + blue + '" opacity="0.12"/>'
+      + '<rect x="30" y="31" width="26" height="25" rx="3" fill="' + blue + '" opacity="0.12"/>'
+      + '<rect x="33" y="13" width="11" height="2"  rx="1" fill="' + blue + '" opacity="0.7"/>'
+      + '<rect x="33" y="18" width="17" height="1.5" rx="1" fill="' + blue + '" opacity="0.35"/>'
+      + '<rect x="33" y="34" width="10" height="2"  rx="1" fill="' + blue + '" opacity="0.7"/>'
+      + '<rect x="33" y="39" width="17" height="1.5" rx="1" fill="' + blue + '" opacity="0.35"/>'
+      + '<rect x="33" y="43" width="13" height="1.5" rx="1" fill="' + blue + '" opacity="0.35"/>'
+      + '<rect x="33" y="47" width="11" height="1.5" rx="1" fill="' + blue + '" opacity="0.35"/>'
+      // col 3
+      + '<rect x="60" y="0"  width="26" height="6"  rx="2" fill="' + markFill + '" opacity="0.85"/>'
+      + '<rect x="60" y="10" width="26" height="33" rx="3" fill="' + markFill + '" opacity="0.13"/>'
+      + '<rect x="63" y="13" width="9"  height="2"  rx="1" fill="' + markFill + '" opacity="0.45"/>'
+      + '<rect x="63" y="18" width="17" height="1.5" rx="1" fill="' + markFill + '" opacity="0.22"/>'
+      + '<rect x="63" y="22" width="12" height="1.5" rx="1" fill="' + markFill + '" opacity="0.22"/>'
+      + '<rect x="63" y="26" width="15" height="1.5" rx="1" fill="' + markFill + '" opacity="0.22"/>'
+      + '<rect x="63" y="30" width="10" height="1.5" rx="1" fill="' + markFill + '" opacity="0.22"/>'
+      + '</g>'
+      + '<text x="57" y="30" font-size="36" font-weight="300" letter-spacing="-1" font-family="\'DM Sans\',sans-serif">'
+      + '<tspan font-weight="500" fill="' + textFill + '">flex</tspan>'
+      + '<tspan fill="' + blue + '" font-weight="500">board</tspan>'
+      + '</text>'
+      + '</g></svg>';
+  }
+
+  function renderLogos() {
+    var dark = html.getAttribute('data-theme') === 'dark';
+    var svg  = logoSVG(dark);
+    document.getElementById('j-logo').innerHTML        = svg;
+    document.getElementById('j-footer-logo').innerHTML = svg;
+  }
+  renderLogos();
+
+  /* ── Scroll Reveal ─────────────────────────────────────── */
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.classList.add('on');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -48px 0px' });
+
+  document.querySelectorAll('.r0').forEach(function (el) { io.observe(el); });
+})();
+</script>
+</body>
+</html>

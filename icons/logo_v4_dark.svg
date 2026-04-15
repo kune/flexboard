@@ -1,0 +1,41 @@
+<svg width="100%" viewBox="186 24 308 72" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Flexboard logo v4 (dark)</title>
+  <desc>Flexboard logo v4 — compact kanban mark with wordmark — dark background version</desc>
+
+  <g transform="translate(196, 34)">
+    <!-- Column 1 -->
+    <rect x="0" y="0" width="26" height="6" rx="2" fill="#fff" opacity="0.85"/>
+    <rect x="0" y="10" width="26" height="25" rx="3" fill="#fff" opacity="0.13"/>
+    <rect x="0" y="39" width="26" height="17" rx="3" fill="#fff" opacity="0.13"/>
+    <rect x="3" y="13" width="10" height="2" rx="1" fill="#fff" opacity="0.45"/>
+    <rect x="3" y="18" width="17" height="1.5" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="3" y="22" width="13" height="1.5" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="3" y="42" width="12" height="2" rx="1" fill="#fff" opacity="0.45"/>
+    <rect x="3" y="47" width="17" height="1.5" rx="1" fill="#fff" opacity="0.22"/>
+
+    <!-- Column 2 (accent blue) -->
+    <rect x="30" y="0" width="26" height="6" rx="2" fill="#2563EB" opacity="0.9"/>
+    <rect x="30" y="10" width="26" height="17" rx="3" fill="#2563EB" opacity="0.12"/>
+    <rect x="30" y="31" width="26" height="25" rx="3" fill="#2563EB" opacity="0.12"/>
+    <rect x="33" y="13" width="11" height="2" rx="1" fill="#2563EB" opacity="0.7"/>
+    <rect x="33" y="18" width="17" height="1.5" rx="1" fill="#2563EB" opacity="0.35"/>
+    <rect x="33" y="34" width="10" height="2" rx="1" fill="#2563EB" opacity="0.7"/>
+    <rect x="33" y="39" width="17" height="1.5" rx="1" fill="#2563EB" opacity="0.35"/>
+    <rect x="33" y="43" width="13" height="1.5" rx="1" fill="#2563EB" opacity="0.35"/>
+    <rect x="33" y="47" width="11" height="1.5" rx="1" fill="#2563EB" opacity="0.35"/>
+
+    <!-- Column 3 -->
+    <rect x="60" y="0" width="26" height="6" rx="2" fill="#fff" opacity="0.85"/>
+    <rect x="60" y="10" width="26" height="33" rx="3" fill="#fff" opacity="0.13"/>
+    <rect x="63" y="13" width="9" height="2" rx="1" fill="#fff" opacity="0.45"/>
+    <rect x="63" y="18" width="17" height="1.5" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="63" y="22" width="12" height="1.5" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="63" y="26" width="15" height="1.5" rx="1" fill="#fff" opacity="0.22"/>
+    <rect x="63" y="30" width="10" height="1.5" rx="1" fill="#fff" opacity="0.22"/>
+
+    <!-- Wordmark -->
+    <text x="100" y="46" font-size="36" font-weight="300" letter-spacing="-1" font-family="'DM Sans', sans-serif">
+      <tspan font-weight="500" fill="#fff">flex</tspan><tspan fill="#2563EB" font-weight="500">board</tspan>
+    </text>
+  </g>
+</svg>
