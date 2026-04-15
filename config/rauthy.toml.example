@@ -1,0 +1,12 @@
+# Rauthy configuration for Flexboard — example / template
+# Do NOT use this file directly. Run scripts/init.sh which generates
+# config/rauthy.toml with random secrets automatically.
+#
+# All other runtime values are provided via environment variables.
+# Reference: https://sebadob.github.io/rauthy/config/config.html
+
+[cluster]
+# Mandatory secrets for the embedded Hiqlite/Raft consensus database.
+# Replace with random hex strings (e.g. openssl rand -hex 32).
+secret_raft = "CHANGE_ME"
+secret_api  = "CHANGE_ME"
