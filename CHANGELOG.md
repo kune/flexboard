@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Rauthy failed to start: `webauthn.rp_id is missing` and `rp_origin requires explicit port` — `[webauthn]` section now included with `rp_origin` always using an explicit port (e.g. `:80`)
 - Rauthy failed to start: `TRUSTED_PROXIES parse error` — changed from JSON array `["0.0.0.0/0"]` to plain CIDR string `0.0.0.0/0`
 - Rauthy container stuck as `unhealthy` (blocking backend/frontend startup): Rauthy's image contains no shell, curl, or wget — the `curl` healthcheck caused an OCI exec failure on every probe; fixed by disabling the Docker healthcheck for Rauthy and changing the backend dependency from `service_healthy` to `service_started`; `init.sh` continues to poll Rauthy from the host side before completing
+- OIDC client `flexboard-web` not created on first start: `clients.json` bootstrap file was missing required fields `auth_code_lifetime`, `access_token_lifetime`, `confidential`, and `force_mfa` — Rauthy's serde schema requires all four; `init.sh` health wait was also polling `docker compose ps` for `(healthy)` which never appears when the healthcheck is disabled; both fixed
+
 - OIDC login failed: wrong endpoint paths — all paths now use the correct `/auth/v1/oidc/` prefix
 - JWT validation failed: issuer mismatch — Rauthy always generates `https://` issuer regardless of `scheme` config; init.sh and all components now consistently use `https://` for the issuer URL
 - `scripts/init.sh`: removed interactive password prompt and bcrypt generation; uses a pre-computed hash for the default password `Test1234!` — no Python, htpasswd, or any other dependency required; now creates `config/rauthy-bootstrap/clients.json` for first-start OIDC client setup

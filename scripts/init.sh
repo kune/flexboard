@@ -126,6 +126,7 @@ else
     "id": "flexboard-web",
     "name": "Flexboard Web",
     "secret": null,
+    "confidential": false,
     "redirect_uris": ["${BASE_URL}/auth/callback"],
     "post_logout_redirect_uris": ["${BASE_URL}"],
     "allowed_origins": ["${BASE_URL}"],
@@ -133,6 +134,9 @@ else
     "flows_enabled": ["authorization_code"],
     "access_token_alg": "RS256",
     "id_token_alg": "RS256",
+    "auth_code_lifetime": 60,
+    "access_token_lifetime": 1800,
+    "force_mfa": false,
     "challenges": ["S256"],
     "scopes": ["openid", "profile", "email"],
     "default_scopes": ["openid", "profile", "email"]
@@ -148,9 +152,11 @@ docker compose up -d --build --force-recreate
 
 log "Waiting for Rauthy to become healthy (up to 90 s)…"
 DEADLINE=$(( $(date +%s) + 90 ))
-until docker compose ps rauthy 2>/dev/null | grep -q "(healthy)"; do
+# Note: Docker healthcheck is disabled for the Rauthy container (it has no shell/curl/wget).
+# Poll the Rauthy health endpoint from the host instead.
+until curl -sf "http://localhost:${RAUTHY_PORT:-8080}/auth/v1/health" >/dev/null 2>&1; do
   sleep 3
-  (( $(date +%s) < DEADLINE )) || err "Rauthy did not become healthy within 90 s."
+  (( $(date +%s) < DEADLINE )) || err "Rauthy did not become healthy within 90 s. Check: docker compose logs rauthy"
 done
 
 log "All services ready."
