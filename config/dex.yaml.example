@@ -1,12 +1,15 @@
 # Dex OIDC configuration template.
 #
-# For local development or VM deployment without running init.sh:
-#   cp config/dex.yaml.example config/dex.yaml
+# scripts/init.sh generates config/dex.yaml automatically.
 #
-# ${FLEXBOARD_BASE_URL} is expanded by Dex at startup from the environment
-# variable set in docker-compose.yml / docker-compose.prod.yml.
+# For manual generation (e.g. prod deployments without running init.sh):
+#   export FLEXBOARD_BASE_URL=http://192.168.1.100
+#   export LLDAP_ADMIN_PASS=YourAdminPassword
+#   sed "s|\${FLEXBOARD_BASE_URL}|$FLEXBOARD_BASE_URL|g; s|\${LLDAP_ADMIN_PASS}|$LLDAP_ADMIN_PASS|g" \
+#     config/dex.yaml.example > config/dex.yaml
 #
-# All test accounts below use the password: Test1234!
+# ${FLEXBOARD_BASE_URL} and ${LLDAP_ADMIN_PASS} are expanded by the sed
+# command above. Dex does not expand shell variables from its config file.
 
 issuer: ${FLEXBOARD_BASE_URL}/dex
 
@@ -24,40 +27,36 @@ staticClients:
     name: Flexboard Web
     redirectURIs:
       - ${FLEXBOARD_BASE_URL}/auth/callback
-      # Add additional URLs if the app is accessible from more than one origin
-      # (e.g. an external domain alongside the internal URL):
-      # - https://flexboard.kune.de/auth/callback
+      # Add additional URLs if the app is accessible from more than one origin:
+      # - https://flexboard.example.com/auth/callback
     public: true
 
-enablePasswordDB: true
-
-staticPasswords:
-  - email: admin@flexboard.localhost
-    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
-    username: admin
-    userID: "admin-000001"
-
-  - email: alice@flexboard.localhost
-    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
-    username: alice
-    userID: "user-000002"
-
-  - email: bob@flexboard.localhost
-    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
-    username: bob
-    userID: "user-000003"
-
-  - email: carol@flexboard.localhost
-    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
-    username: carol
-    userID: "user-000004"
-
-  - email: dave@flexboard.localhost
-    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
-    username: dave
-    userID: "user-000005"
-
-  - email: eve@flexboard.localhost
-    hash: "$2a$10$O3Vqj3kfz9OWR3pZNAXboe3XetsMxGHnzeWczwDrEVFgPq0LbSxfi"
-    username: eve
-    userID: "user-000006"
+# LDAP connector — authenticates users from the LLDAP container.
+# LLDAP listens on port 3890 (LDAP) and 17170 (web UI / API).
+# Manage users and reset passwords at http://<host>:17170
+connectors:
+  - type: ldap
+    id: ldap
+    name: LLDAP
+    config:
+      host: lldap:3890
+      insecureNoSSL: true
+      # Bind with the LLDAP admin account.
+      # bindPW must match LLDAP_ADMIN_PASS in docker-compose.yml / .env
+      bindDN: uid=admin,ou=people,dc=flexboard,dc=localhost
+      bindPW: "${LLDAP_ADMIN_PASS}"
+      usernamePrompt: Email Address
+      userSearch:
+        baseDN: ou=people,dc=flexboard,dc=localhost
+        filter: "(objectClass=person)"
+        username: mail
+        idAttr: uid
+        emailAttr: mail
+        nameAttr: cn
+      groupSearch:
+        baseDN: ou=groups,dc=flexboard,dc=localhost
+        filter: "(objectClass=groupOfUniqueNames)"
+        userMatchers:
+          - userAttr: DN
+            groupAttr: uniqueMember
+        nameAttr: cn

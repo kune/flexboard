@@ -1,13 +1,14 @@
 # Production deployment using published Docker Hub images.
-# Usage:
-#   export FLEXBOARD_BASE_URL=http://192.168.1.100   # URL the browser uses to reach the app
-#   sed "s|\${FLEXBOARD_BASE_URL}|$FLEXBOARD_BASE_URL|g" config/dex.yaml.example > config/dex.yaml
-#   docker compose -f docker-compose.prod.yml up -d
+# Usage (recommended):
+#   export FLEXBOARD_BASE_URL=http://192.168.1.100
+#   bash scripts/init.sh
 #
-# config/dex.yaml must be generated from config/dex.yaml.example (see above) or
-# from scripts/init.sh (which lets you choose an admin password).
-# The sed substitution is needed because Dex does not expand shell variables
-# in its config file — the replacement must happen on the host before mounting.
+# Alternative (manual dex.yaml generation):
+#   export FLEXBOARD_BASE_URL=http://192.168.1.100
+#   export LLDAP_ADMIN_PASS=YourAdminPassword
+#   sed "s|\${FLEXBOARD_BASE_URL}|$FLEXBOARD_BASE_URL|g; s|\${LLDAP_ADMIN_PASS}|$LLDAP_ADMIN_PASS|g" \
+#     config/dex.yaml.example > config/dex.yaml
+#   docker compose -f docker-compose.prod.yml up -d
 
 name: flexboard
 
@@ -60,6 +61,9 @@ services:
     command: dex serve /etc/dex/config.yaml
     volumes:
       - ./config/dex.yaml:/etc/dex/config.yaml:ro
+    depends_on:
+      lldap:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5556/dex/healthz"]
@@ -68,5 +72,26 @@ services:
       retries: 5
       start_period: 10s
 
+  lldap:
+    image: lldap/lldap:stable
+    environment:
+      LLDAP_JWT_SECRET: ${LLDAP_JWT_SECRET:-change-this-secret-in-dot-env}
+      LLDAP_LDAP_USER_PASS: ${LLDAP_ADMIN_PASS:-Test1234!}
+      LLDAP_LDAP_USER_EMAIL: admin@flexboard.localhost
+      LLDAP_LDAP_BASE_DN: dc=flexboard,dc=localhost
+      LLDAP_HTTP_URL: http://localhost:${LLDAP_PORT:-17170}
+    volumes:
+      - lldap-data:/data
+    ports:
+      - "${LLDAP_PORT:-17170}:17170"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:17170/health | grep -q ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
 volumes:
   mongo-data:
+  lldap-data:

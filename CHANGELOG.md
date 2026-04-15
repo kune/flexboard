@@ -14,6 +14,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - `scripts/init.sh`: removed interactive password prompt and bcrypt generation; uses a pre-computed hash for the default password `Test1234!` — no Python, htpasswd, or any other dependency required; password is documented in the script output and on the website
+- User management now handled by **LLDAP** (`lldap/lldap:stable`) instead of Dex `staticPasswords`; Dex now uses an LDAP connector backed by LLDAP; users and passwords are managed via the LLDAP web UI at port 17170
+- `scripts/init.sh` generates a random `LLDAP_JWT_SECRET` and persists it to `.env` on first run; generates `config/dex.yaml` with the LDAP connector config (no more bcrypt hashing)
+- `config/dex.yaml.example` updated to reflect the LDAP connector; manual generation now requires substituting both `${FLEXBOARD_BASE_URL}` and `${LLDAP_ADMIN_PASS}` via `sed`
+- `docker-compose.yml` and `docker-compose.prod.yml`: added `lldap` service and `lldap-data` volume; `dex` now depends on `lldap: service_healthy`
 
 ## [0.5.1] - 2026-04-15
 
