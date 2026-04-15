@@ -172,5 +172,5 @@
 
 | Status | Task | Notes |
 |--------|------|-------|
-| ✅ | Landing page (`website/`) | One-page marketing site for flexboard.org; light/dark mode; kanban mockup; GitHub Pages ready (`website/CNAME`) |
+| ✅ | Landing page (`docs/index.html`) | One-page marketing site for flexboard.org; light/dark mode; kanban mockup; served via GitHub Pages from `/docs` branch folder (`docs/CNAME`) |
 | ✅ | Logo SVG assets (`icons/`) | Four logos with cropped viewBoxes; dark-background variants for each |
