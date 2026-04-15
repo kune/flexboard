@@ -1,5 +1,5 @@
 // Runtime configuration injected by Nginx at container startup via envsubst.
-// Sets the canonical Dex issuer URL so that oidc-client-ts can validate the
+// Sets the canonical Rauthy issuer URL so that oidc-client-ts can validate the
 // `iss` claim in JWTs correctly even when the app is accessed from a different
-// URL than the one configured as the Dex issuer.
-window.__FLEXBOARD_DEX_ISSUER__ = "${DEX_ISSUER}";
+// URL than the one configured as the Rauthy issuer.
+window.__FLEXBOARD_OIDC_ISSUER__ = "${OIDC_ISSUER}";

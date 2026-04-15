@@ -2,12 +2,12 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose'
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { User } from '../models/user.js'
 
-// Issuer as seen in JWT tokens (must match `issuer` in config/dex.yaml)
-const DEX_ISSUER = process.env.DEX_ISSUER ?? 'http://localhost/dex'
+// Issuer as seen in JWT tokens (must match Rauthy's PUB_URL)
+const RAUTHY_ISSUER = process.env.RAUTHY_ISSUER ?? 'http://localhost/rauthy'
 // Internal URL for JWKS — container-to-container, bypasses nginx
-const DEX_JWKS_URL = process.env.DEX_JWKS_URL ?? 'http://dex:5556/dex/keys'
+const RAUTHY_JWKS_URL = process.env.RAUTHY_JWKS_URL ?? 'http://rauthy:8080/oidc/certs'
 
-const JWKS = createRemoteJWKSet(new URL(DEX_JWKS_URL))
+const JWKS = createRemoteJWKSet(new URL(RAUTHY_JWKS_URL))
 
 export interface AuthPayload extends JWTPayload {
   email?: string
@@ -17,7 +17,7 @@ export interface AuthPayload extends JWTPayload {
 export async function verifyToken(token: string): Promise<AuthPayload | null> {
   try {
     const { payload } = await jwtVerify<AuthPayload>(token, JWKS, {
-      issuer: DEX_ISSUER,
+      issuer: RAUTHY_ISSUER,
     })
     return payload
   } catch {
@@ -39,7 +39,7 @@ export async function requireAuth(
 
   try {
     const { payload } = await jwtVerify<AuthPayload>(token, JWKS, {
-      issuer: DEX_ISSUER,
+      issuer: RAUTHY_ISSUER,
     })
     ;(request as FastifyRequest & { user: AuthPayload }).user = payload
 

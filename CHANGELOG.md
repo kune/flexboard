@@ -13,12 +13,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Datenschutzerklärung section (`#datenschutz`) on the marketing website: covers GitHub Pages hosting (Art. 6 Abs. 1 lit. f DSGVO), states no cookies/tracking/analytics, lists user rights and HmbBfDI as supervisory authority
 
 ### Changed
-- `scripts/init.sh`: removed interactive password prompt and bcrypt generation; uses a pre-computed hash for the default password `Test1234!` — no Python, htpasswd, or any other dependency required; password is documented in the script output and on the website
-- User management now handled by **LLDAP** (`lldap/lldap:stable`) instead of Dex `staticPasswords`; Dex now uses an LDAP connector backed by LLDAP; users and passwords are managed via the LLDAP web UI at port 17170
-- `scripts/init.sh` generates a random `LLDAP_JWT_SECRET` and persists it to `.env` on first run; generates `config/dex.yaml` with the LDAP connector config (no more bcrypt hashing)
-- `config/dex.yaml.example` updated to reflect the LDAP connector; manual generation now requires substituting both `${FLEXBOARD_BASE_URL}` and `${LLDAP_ADMIN_PASS}` via `sed`
-- `docker-compose.yml` and `docker-compose.prod.yml`: added `lldap` service and `lldap-data` volume; `dex` now depends on `lldap: service_healthy`
-- LLDAP web UI proxied through the main nginx at `/useradmin/` (same host and port as the app); direct port 17170 is still exposed for debugging; `LLDAP_HTTP_URL` includes the `/useradmin` subpath so LLDAP's `<base href>` resolves correctly (requires LLDAP v0.6.0+, which `lldap/lldap:stable` provides)
+- `scripts/init.sh`: removed interactive password prompt and bcrypt generation; uses a pre-computed hash for the default password `Test1234!` — no Python, htpasswd, or any other dependency required; now generates `RAUTHY_ENC_KEYS` / `RAUTHY_ENC_KEY_ACTIVE` into `.env` and creates `config/rauthy-bootstrap/clients.json` for first-start OIDC client setup
+- OIDC provider and user management replaced: **Dex + LLDAP** removed; replaced by **Rauthy** (`ghcr.io/sebadob/rauthy:0.35.1`), a single lightweight Rust-based self-hosted IdP with built-in user and group management; true SSO — the same login session used for Flexboard grants access to the Rauthy admin interface
+- Rauthy admin UI available at `/rauthy/` (same host and port as the app, proxied by nginx); `config/rauthy-bootstrap/clients.json` bootstraps the OIDC client on first start
+- `docker-compose.yml` and `docker-compose.prod.yml`: replaced `dex` + `lldap` services and volumes with a single `rauthy` service; `backend` now reads `RAUTHY_ISSUER` / `RAUTHY_JWKS_URL`; `frontend` reads `OIDC_ISSUER`
+- nginx configs simplified: removed the multiple LLDAP path-shim location blocks; replaced with a single clean `location /rauthy/ { proxy_pass http://rauthy:8080/; }` block
+- `docker/config.js.template`: renamed `window.__FLEXBOARD_DEX_ISSUER__` → `window.__FLEXBOARD_OIDC_ISSUER__`; env var renamed `DEX_ISSUER` → `OIDC_ISSUER`
+- `apps/frontend/src/lib/auth.ts`: updated OIDC authority to `/rauthy`; updated endpoint paths to Rauthy conventions (`/oidc/authorize`, `/oidc/token`, `/oidc/certs`, `/oidc/userinfo`, `/oidc/logout`); sign-out now uses RP-initiated logout (`signoutRedirect`) since Rauthy implements the end-session endpoint
+- `apps/backend/src/lib/auth.ts`: renamed `DEX_ISSUER` → `RAUTHY_ISSUER` and `DEX_JWKS_URL` → `RAUTHY_JWKS_URL`
 
 ## [0.5.1] - 2026-04-15
 
