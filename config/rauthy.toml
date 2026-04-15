@@ -1,0 +1,11 @@
+# Rauthy configuration for Flexboard
+# All runtime values are provided via environment variables (see docker-compose.yml).
+# This file must exist for Rauthy to start; it is intentionally minimal.
+# Reference: https://sebadob.github.io/rauthy/config/config.html
+#
+# Key env vars used (set by init.sh / docker-compose.yml):
+#   PUB_URL                         — public base URL / OIDC issuer
+#   LISTEN_ADDRESS / LISTEN_PORT_HTTP
+#   PROXY_MODE / TRUSTED_PROXIES    — required when behind nginx
+#   ENC_KEYS / ENC_KEY_ACTIVE       — encryption key for sensitive data
+#   BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD_PLAIN

@@ -79,6 +79,8 @@ services:
       ENC_KEY_ACTIVE: ${RAUTHY_ENC_KEY_ACTIVE}
     volumes:
       - rauthy-data:/app/data
+      # Required: Rauthy panics on startup if config.toml does not exist
+      - ./config/rauthy.toml:/app/config.toml:ro
       # Bootstrap OIDC clients — read by Rauthy on first start when no clients exist
       - ./config/rauthy-bootstrap:/app/bootstrap:ro
     ports:
