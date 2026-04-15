@@ -79,6 +79,7 @@ services:
       LLDAP_LDAP_USER_PASS: ${LLDAP_ADMIN_PASS:-Test1234!}
       LLDAP_LDAP_USER_EMAIL: admin@flexboard.localhost
       LLDAP_LDAP_BASE_DN: dc=flexboard,dc=localhost
+      # Public base URL used by LLDAP for generating password-reset links in emails.
       LLDAP_HTTP_URL: ${FLEXBOARD_BASE_URL:-http://localhost}/useradmin
     volumes:
       - lldap-data:/data
