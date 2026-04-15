@@ -14,17 +14,17 @@ function initials(name: string): string {
   return name.slice(0, 2).toUpperCase()
 }
 
-async function buildGravatarUrl(email: string, px: number): Promise<string> {
+async function buildAvatarUrl(email: string, px: number): Promise<string> {
   const normalized = email.trim().toLowerCase()
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized))
   const hash = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
-  return `https://www.gravatar.com/avatar/${hash}?d=404&s=${px * 2}`
+  return `https://seccdn.libravatar.org/avatar/${hash}?d=404&s=${px * 2}`
 }
 
 interface UserAvatarProps {
   /** Display name — used for initials fallback */
   name: string
-  /** Email address — used to load Gravatar */
+  /** Email address — used to load Libravatar */
   email?: string
   /** User ID / sub — used for deterministic colour when falling back to initials */
   sub?: string
@@ -49,7 +49,7 @@ export default function UserAvatar({
   useEffect(() => {
     setSrc(null)
     if (!email) return
-    buildGravatarUrl(email, size).then(setSrc)
+    buildAvatarUrl(email, size).then(setSrc)
   }, [email, size])
 
   const color = colorClass(sub ?? name)

@@ -10,18 +10,18 @@ interface NavProps {
   user: User
 }
 
-async function gravatarUrl(email: string): Promise<string> {
+async function libravatarUrl(email: string): Promise<string> {
   const normalized = email.trim().toLowerCase()
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalized))
   const hash = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
-  return `https://www.gravatar.com/avatar/${hash}?d=404&s=80`
+  return `https://seccdn.libravatar.org/avatar/${hash}?d=404&s=80`
 }
 
 export default function Nav({ user }: NavProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [crumbExpanded, setCrumbExpanded] = useState(false)
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null)
-  const [gravatarMissing, setGravatarMissing] = useState(false)
+  const [avatarMissing, setAvatarMissing] = useState(false)
   const boardId = useUiStore((s) => s.boardId)
   const boardName = useUiStore((s) => s.boardName)
   const cardTitle = useUiStore((s) => s.cardTitle)
@@ -43,7 +43,7 @@ export default function Nav({ user }: NavProps) {
   useEffect(() => {
     const email = user.profile.email
     if (!email) return
-    gravatarUrl(email).then(setAvatarSrc)
+    libravatarUrl(email).then(setAvatarSrc)
   }, [user.profile.email])
 
   const { data: versionData } = useQuery({
@@ -110,7 +110,7 @@ export default function Nav({ user }: NavProps) {
           aria-label="User menu"
         >
           {avatarSrc
-            ? <img src={avatarSrc} alt={initials} className="nav-avatar-img" onError={() => { setAvatarSrc(null); setGravatarMissing(true) }} />
+            ? <img src={avatarSrc} alt={initials} className="nav-avatar-img" onError={() => { setAvatarSrc(null); setAvatarMissing(true) }} />
             : initials}
         </button>
 
@@ -128,12 +128,12 @@ export default function Nav({ user }: NavProps) {
               {user.profile.email && (
                 <a
                   className="nav-dropdown-item"
-                  href="https://gravatar.com"
+                  href="https://libravatar.org"
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => setDropdownOpen(false)}
                 >
-                  {gravatarMissing ? 'Set up profile picture' : 'Change profile picture'} ↗
+                  {avatarMissing ? 'Set up profile picture' : 'Change profile picture'} ↗
                 </a>
               )}
               <button

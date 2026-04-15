@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-04-15
+
+### Changed
+- Profile picture service switched from Gravatar to Libravatar (`seccdn.libravatar.org`); the "Set up / Change profile picture" link in the user menu now points to libravatar.org
+
 ## [0.5.0] - 2026-04-14
 
 ### Added

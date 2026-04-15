@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-14 (v0.5.0: multi-URL deployment support)  
+> **Last updated:** 2026-04-15 (v0.5.1: Libravatar instead of Gravatar)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
