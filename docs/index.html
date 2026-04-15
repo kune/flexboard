@@ -9,10 +9,39 @@
   <meta property="og:description" content="Real-time Kanban, OIDC auth, and schema-driven cards — fully self-hosted. Work in Flow.">
   <meta property="og:url" content="https://flexboard.org">
   <meta property="og:type" content="website">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
+    /* ─── Self-hosted fonts (no external requests) ───────── */
+    @font-face {
+      font-family: 'DM Sans'; font-style: normal; font-weight: 300 600; font-display: swap;
+      src: url('fonts/dm-sans-lat-ext.woff2') format('woff2');
+      unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+    }
+    @font-face {
+      font-family: 'DM Sans'; font-style: normal; font-weight: 300 600; font-display: swap;
+      src: url('fonts/dm-sans-lat.woff2') format('woff2');
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+    }
+    @font-face {
+      font-family: 'DM Mono'; font-style: normal; font-weight: 400; font-display: swap;
+      src: url('fonts/dm-mono-400-lat-ext.woff2') format('woff2');
+      unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+    }
+    @font-face {
+      font-family: 'DM Mono'; font-style: normal; font-weight: 400; font-display: swap;
+      src: url('fonts/dm-mono-400-lat.woff2') format('woff2');
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+    }
+    @font-face {
+      font-family: 'DM Mono'; font-style: normal; font-weight: 500; font-display: swap;
+      src: url('fonts/dm-mono-500-lat-ext.woff2') format('woff2');
+      unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+    }
+    @font-face {
+      font-family: 'DM Mono'; font-style: normal; font-weight: 500; font-display: swap;
+      src: url('fonts/dm-mono-500-lat.woff2') format('woff2');
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+    }
+
     /* ─── Reset ──────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
@@ -1046,6 +1075,72 @@
   </div>
 </section>
 
+<!-- ════════════════════════ IMPRESSUM ══════════════════════ -->
+<section id="impressum">
+  <div class="container">
+    <h2 class="section-title r0" style="margin-bottom:28px;">Impressum</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:32px;">
+      <div>
+        <div class="section-label" style="margin-bottom:10px;">Angaben gemäß § 5 TMG</div>
+        <p style="font-size:15px;font-weight:400;color:var(--text-2);line-height:1.8;">
+          Alexander Kune<br>
+          Wählingsweg 12a<br>
+          22459 Hamburg<br>
+          Deutschland
+        </p>
+        <p style="font-size:15px;color:var(--text-2);margin-top:16px;">
+          E-Mail: <a href="mailto:alexander@kune.de">alexander@kune.de</a>
+        </p>
+      </div>
+      <div>
+        <div class="section-label" style="margin-bottom:10px;">Verantwortlich gemäß § 18 Abs. 2 MStV</div>
+        <p style="font-size:15px;font-weight:400;color:var(--text-2);line-height:1.8;">
+          Alexander Kune<br>
+          Wählingsweg 12a<br>
+          22459 Hamburg
+        </p>
+      </div>
+      <div>
+        <div class="section-label" style="margin-bottom:10px;">Haftungshinweis</div>
+        <p style="font-size:14px;font-weight:300;color:var(--text-3);line-height:1.7;">
+          Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ DATENSCHUTZ ══════════════════════ -->
+<section id="datenschutz" class="alt">
+  <div class="container">
+    <h2 class="section-title r0" style="margin-bottom:28px;">Datenschutzerklärung</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:40px;font-size:14px;font-weight:300;line-height:1.75;color:var(--text-2);">
+
+      <div>
+        <div class="section-label" style="margin-bottom:10px;">Verantwortlicher</div>
+        <p>Alexander Kune, Wählingsweg 12a, 22459 Hamburg<br>
+        E-Mail: <a href="mailto:alexander@kune.de">alexander@kune.de</a></p>
+      </div>
+
+      <div>
+        <div class="section-label" style="margin-bottom:10px;">Hosting</div>
+        <p>Diese Website wird über <strong style="font-weight:500;color:var(--text-1);">GitHub Pages</strong> (GitHub, Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, USA) bereitgestellt. Beim Abruf der Seite speichert GitHub in Server-Logs technische Zugriffsdaten (u. a. IP-Adresse, Zeitstempel, aufgerufene URL). Weitere Informationen: <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages#data-collection" target="_blank" rel="noopener">GitHub Pages – Data Collection</a>. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am sicheren Betrieb der Website).</p>
+      </div>
+
+      <div>
+        <div class="section-label" style="margin-bottom:10px;">Keine weiteren Datenerhebungen</div>
+        <p>Diese Website verwendet <strong style="font-weight:500;color:var(--text-1);">keine Cookies</strong>, kein Tracking, keine Analyse-Dienste und keine Werbung. Schriftarten werden lokal ausgeliefert; es werden keine externen Ressourcen nachgeladen.</p>
+      </div>
+
+      <div>
+        <div class="section-label" style="margin-bottom:10px;">Ihre Rechte</div>
+        <p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Beschwerden können Sie an die zuständige Aufsichtsbehörde richten: <a href="https://datenschutz.hamburg.de" target="_blank" rel="noopener">Hamburgischer Beauftragter für Datenschutz und Informationsfreiheit</a>.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- ════════════════════════ FOOTER ═════════════════════════ -->
 <footer>
   <div class="container">
@@ -1056,6 +1151,8 @@
         <a href="https://github.com/kune/flexboard/blob/main/CHANGELOG.md" class="footer-link" target="_blank" rel="noopener">Changelog</a>
         <a href="https://github.com/kune/flexboard/issues" class="footer-link" target="_blank" rel="noopener">Issues</a>
         <a href="https://github.com/kune/flexboard/blob/main/LICENSE" class="footer-link" target="_blank" rel="noopener">MIT License</a>
+        <a href="#impressum" class="footer-link">Impressum</a>
+        <a href="#datenschutz" class="footer-link">Datenschutz</a>
       </nav>
       <div class="footer-copy">© 2026 Flexboard · v0.5.1</div>
     </div>

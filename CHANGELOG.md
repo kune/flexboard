@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Marketing website (`docs/index.html`) — single-page landing site for flexboard.org with light/dark mode toggle, kanban board mockup, feature overview, getting-started code snippet, and tech stack section; served via GitHub Pages from the `/docs` folder (includes `docs/CNAME`)
 - SVG logo assets (`icons/`): cropped viewBoxes to remove excess whitespace on all four logos; added dark-background variants (`icon_dark.svg`, `logo_header_dark.svg`, `logo_promo_dark.svg`, `logo_v4_dark.svg`)
+- Self-hosted fonts (`docs/fonts/`): DM Sans variable font and DM Mono (400/500) as WOFF2 files — replaces Google Fonts CDN links to comply with DSGVO/GDPR (no IP transfer to Google)
+- Impressum page section (`#impressum`) on the marketing website: operator details per § 5 TMG and § 18 Abs. 2 MStV (Alexander Kune, Hamburg)
+- Datenschutzerklärung section (`#datenschutz`) on the marketing website: covers GitHub Pages hosting (Art. 6 Abs. 1 lit. f DSGVO), states no cookies/tracking/analytics, lists user rights and HmbBfDI as supervisory authority
 
 ## [0.5.1] - 2026-04-15
 
