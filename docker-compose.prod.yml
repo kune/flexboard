@@ -38,7 +38,7 @@ services:
       mongodb:
         condition: service_healthy
       rauthy:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
@@ -71,12 +71,10 @@ services:
     ports:
       - "${RAUTHY_PORT:-8080}:8080"
     restart: unless-stopped
+    # Rauthy's image has no shell/curl/wget — healthcheck must be disabled.
+    # init.sh polls http://HOST:RAUTHY_PORT/auth/v1/health from the host before completing.
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8080/auth/v1/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      disable: true
 
 volumes:
   mongo-data:
