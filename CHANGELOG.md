@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Impressum page section (`#impressum`) on the marketing website: operator details per § 5 TMG and § 18 Abs. 2 MStV (Alexander Kune, Hamburg)
 - Datenschutzerklärung section (`#datenschutz`) on the marketing website: covers GitHub Pages hosting (Art. 6 Abs. 1 lit. f DSGVO), states no cookies/tracking/analytics, lists user rights and HmbBfDI as supervisory authority
 
+### Changed
+- `scripts/init.sh`: removed interactive password prompt and bcrypt generation; uses a pre-computed hash for the default password `Test1234!` — no Python, htpasswd, or any other dependency required; password is documented in the script output and on the website
+
 ## [0.5.1] - 2026-04-15
 
 ### Changed
