@@ -1,12 +1,33 @@
 # Rauthy configuration for Flexboard — example / template
 # Do NOT use this file directly. Run scripts/init.sh which generates
-# config/rauthy.toml with random secrets automatically.
+# config/rauthy.toml with random secrets and deployment-specific values.
 #
-# All other runtime values are provided via environment variables.
 # Reference: https://sebadob.github.io/rauthy/config/config.html
+# All other runtime values (PROXY_MODE, BOOTSTRAP_ADMIN_*, etc.) are set
+# via environment variables in docker-compose.yml.
+
+[server]
+# Public URL without scheme. Rauthy always uses https:// for the OIDC issuer.
+# For nginx subpath at /rauthy: strip scheme from FLEXBOARD_BASE_URL, append /rauthy.
+# e.g. FLEXBOARD_BASE_URL=http://192.168.1.100 → pub_url = '192.168.1.100/rauthy'
+pub_url = 'localhost/rauthy'
+port_http = 8080
 
 [cluster]
-# Mandatory secrets for the embedded Hiqlite/Raft consensus database.
-# Replace with random hex strings (e.g. openssl rand -hex 32).
-secret_raft = "CHANGE_ME"
-secret_api  = "CHANGE_ME"
+# Required even for single-node deployments (embedded Hiqlite/Raft database).
+node_id = 1
+nodes = ['1 localhost:8100 localhost:8200']
+secret_raft = 'CHANGE_ME_RANDOM_HEX_64_CHARS'
+secret_api  = 'CHANGE_ME_RANDOM_HEX_64_CHARS'
+
+[encryption]
+# Encryption key for sensitive data. Format: 'kid/base64_encoded_32_bytes'
+# Generate: KID=$(openssl rand -hex 8); KEY=$(openssl rand -base64 32); echo "${KID}/${KEY}"
+keys = ['CHANGE_KID/CHANGE_BASE64_32_BYTES']
+key_active = 'CHANGE_KID'
+
+[webauthn]
+# Required even if passkeys are not used. Must match the app's public origin.
+# rp_origin MUST include an explicit port number.
+rp_id = 'localhost'
+rp_origin = 'http://localhost:80'

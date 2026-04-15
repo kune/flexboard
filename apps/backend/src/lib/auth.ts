@@ -2,10 +2,12 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose'
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { User } from '../models/user.js'
 
-// Issuer as seen in JWT tokens (must match Rauthy's PUB_URL)
-const RAUTHY_ISSUER = process.env.RAUTHY_ISSUER ?? 'http://localhost/rauthy'
-// Internal URL for JWKS — container-to-container, bypasses nginx
-const RAUTHY_JWKS_URL = process.env.RAUTHY_JWKS_URL ?? 'http://rauthy:8080/oidc/certs'
+// Issuer as seen in JWT tokens (must match Rauthy's pub_url + /auth/v1/ suffix).
+// Rauthy always uses https:// in the issuer regardless of deployment listen scheme.
+const RAUTHY_ISSUER = process.env.RAUTHY_ISSUER ?? 'https://localhost/rauthy/auth/v1/'
+// Internal URL for JWKS — container-to-container, bypasses nginx.
+// Rauthy serves JWKS at /auth/v1/oidc/certs.
+const RAUTHY_JWKS_URL = process.env.RAUTHY_JWKS_URL ?? 'http://rauthy:8080/auth/v1/oidc/certs'
 
 const JWKS = createRemoteJWKSet(new URL(RAUTHY_JWKS_URL))
 

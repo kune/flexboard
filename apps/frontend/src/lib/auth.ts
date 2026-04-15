@@ -2,18 +2,20 @@ import { UserManager, WebStorageStateStore, type User } from 'oidc-client-ts'
 
 // Endpoint base: always derived from the current origin so the same Docker
 // image works under any hostname/IP without rebuild.
-const OIDC_AUTHORITY = `${window.location.origin}/rauthy`
+// Rauthy serves all OIDC endpoints under the /auth/v1/ prefix.
+const OIDC_AUTHORITY = `${window.location.origin}/rauthy/auth/v1`
 const CLIENT_ID = import.meta.env.VITE_OIDC_CLIENT_ID ?? 'flexboard-web'
 
 // Canonical Rauthy issuer — used only for `iss` claim validation in JWTs.
-// When the app is accessed from a second URL (e.g. an external domain) the
-// tokens still carry the primary deployment's issuer in their `iss` claim.
-// Nginx injects this value at container startup via envsubst into /config.js
-// (sets window.__FLEXBOARD_OIDC_ISSUER__). Falls back to the current origin so
-// single-URL deployments and local dev work without any extra configuration.
+// Rauthy always uses https:// in the issuer regardless of the deployment's
+// listen scheme (it generates a self-signed cert as fallback).
+// Nginx injects the correct value at container startup via envsubst into
+// /config.js (sets window.__FLEXBOARD_OIDC_ISSUER__).
+// In dev (no config.js injection), derive by replacing http:// → https://
+// and appending a trailing slash to match Rauthy's issuer format.
 const CANONICAL_ISSUER: string =
   (window as unknown as { __FLEXBOARD_OIDC_ISSUER__?: string }).__FLEXBOARD_OIDC_ISSUER__ ||
-  OIDC_AUTHORITY
+  OIDC_AUTHORITY.replace(/^http:\/\//, 'https://') + '/'
 
 export const userManager = new UserManager({
   authority: OIDC_AUTHORITY,
@@ -26,8 +28,8 @@ export const userManager = new UserManager({
   // Pre-seed the OIDC metadata so oidc-client-ts skips the discovery fetch.
   // The discovery fetch is a JavaScript fetch() call that can fail with
   // self-signed certificates before the user interacts with the page.
-  // Endpoint URLs use the runtime origin; the issuer uses the canonical value
-  // so that tokens validate correctly when accessed from a second URL.
+  // Endpoint URLs use the runtime origin (same-origin requests through nginx);
+  // the issuer uses the canonical https:// value for JWT iss claim validation.
   metadata: {
     issuer: CANONICAL_ISSUER,
     authorization_endpoint: `${OIDC_AUTHORITY}/oidc/authorize`,
