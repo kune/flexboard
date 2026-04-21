@@ -26,6 +26,12 @@ export async function boardRoutes(app: FastifyInstance): Promise<void> {
       description,
       members: [{ userId: sub, role: 'owner' }],
     })
+    // Seed three default columns so the "Add card" button is immediately usable.
+    await Column.insertMany([
+      { boardId: board._id, name: 'To Do',       position: 0 },
+      { boardId: board._id, name: 'In Progress',  position: 1 },
+      { boardId: board._id, name: 'Done',         position: 2 },
+    ])
     return reply.code(201).send(board)
   })
 

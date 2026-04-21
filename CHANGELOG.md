@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- New boards now start with three default columns ("To Do", "In Progress", "Done") so the "Add card" button is immediately usable; previously the button was permanently disabled on empty boards, making it impossible to add cards without first entering edit mode to create columns manually
+
 ## [0.5.1] - 2026-04-15
 
 ### Changed
