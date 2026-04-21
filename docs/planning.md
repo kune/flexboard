@@ -1,6 +1,6 @@
 # Flexboard – Project Planning
 
-> **Last updated:** 2026-04-15 (v0.5.1: Libravatar instead of Gravatar)  
+> **Last updated:** 2026-04-21 (v0.5.2: default columns on board creation)  
 > **Legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
